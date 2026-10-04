@@ -1,6 +1,7 @@
 import { Pause, Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { SYSTEM_LIST } from '@/lib/systems';
 import type { StatusTone, SystemDefinition } from '@/lib/systems';
 
 const SLIDE_SECONDS = 6;
@@ -17,15 +18,19 @@ export default function SystemShowcase({
 }: {
     system: SystemDefinition;
 }) {
-    const [active, setActive] = useState(0);
+    const initial = Math.max(
+        0,
+        SYSTEM_LIST.findIndex((item) => item.key === system.key),
+    );
+    const [active, setActive] = useState(initial);
     const [paused, setPaused] = useState(false);
 
-    const moduleCount = system.modules.length;
-    const current = system.modules[active] ?? system.modules[0];
+    const systemCount = SYSTEM_LIST.length;
+    const current = SYSTEM_LIST[active];
 
     useEffect(() => {
-        setActive(0);
-    }, [system.key]);
+        setActive(initial);
+    }, [initial]);
 
     useEffect(() => {
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -37,15 +42,15 @@ export default function SystemShowcase({
         <div className="mx-auto w-full max-w-[580px]">
             <div
                 role="tablist"
-                aria-label={`Módulos de ${system.fullName}`}
+                aria-label="Sistemas de la plataforma"
                 className="flex flex-wrap gap-2"
             >
-                {system.modules.map((module, index) => {
+                {SYSTEM_LIST.map((item, index) => {
                     const isActive = index === active;
 
                     return (
                         <button
-                            key={module.label}
+                            key={item.key}
                             type="button"
                             role="tab"
                             id={`showcase-tab-${index}`}
@@ -59,15 +64,15 @@ export default function SystemShowcase({
                                     : 'border-white/20 bg-white/5 text-(--sys-200) hover:border-white/35 hover:bg-white/10',
                             )}
                         >
-                            <module.icon className="size-4" aria-hidden />
-                            {module.label}
+                            <item.icon className="size-4" aria-hidden />
+                            {item.name}
                         </button>
                     );
                 })}
             </div>
 
             <div
-                key={`${system.key}-${active}`}
+                key={current.key}
                 id="showcase-panel"
                 role="tabpanel"
                 aria-labelledby={`showcase-tab-${active}`}
@@ -82,6 +87,15 @@ export default function SystemShowcase({
                 >
                     {current.blurb}
                 </p>
+                <p
+                    className="sys-rise mt-3 max-w-[52ch] text-[13px] leading-relaxed text-(--sys-300)"
+                    style={{ '--sys-delay': '110ms' } as React.CSSProperties}
+                >
+                    <span className="font-semibold text-(--sys-200)">
+                        {current.fullName}:
+                    </span>{' '}
+                    {current.modules.map((module) => module.label).join(' · ')}
+                </p>
 
                 <div
                     className="sys-rise mt-8 overflow-hidden rounded-2xl border border-white/15 bg-white/[0.07] shadow-[0_24px_48px_-24px_rgb(0_0_0/0.55)]"
@@ -94,10 +108,7 @@ export default function SystemShowcase({
                                 className="flex items-center gap-4 px-5 py-4"
                             >
                                 <span className="grid size-11 shrink-0 place-items-center rounded-full bg-white/10 text-(--sys-200)">
-                                    <current.icon
-                                        className="size-5"
-                                        aria-hidden
-                                    />
+                                    <row.icon className="size-5" aria-hidden />
                                 </span>
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate text-[15px] font-semibold text-white">
@@ -135,11 +146,11 @@ export default function SystemShowcase({
 
             <div className="mt-8 flex items-center gap-3">
                 <div className="flex flex-1 gap-2">
-                    {system.modules.map((module, index) => (
+                    {SYSTEM_LIST.map((item, index) => (
                         <button
-                            key={module.label}
+                            key={item.key}
                             type="button"
-                            aria-label={`Ver ${module.label}`}
+                            aria-label={`Ver ${item.name}`}
                             onClick={() => setActive(index)}
                             className="group flex h-6 flex-1 items-center outline-none"
                         >
@@ -149,7 +160,7 @@ export default function SystemShowcase({
                                 )}
                                 {index === active && (
                                     <span
-                                        key={`${system.key}-${active}`}
+                                        key={current.key}
                                         className="sys-fill absolute inset-0 bg-white"
                                         data-paused={paused}
                                         style={
@@ -158,7 +169,9 @@ export default function SystemShowcase({
                                             } as React.CSSProperties
                                         }
                                         onAnimationEnd={() =>
-                                            setActive((i) => (i + 1) % moduleCount)
+                                            setActive(
+                                                (i) => (i + 1) % systemCount,
+                                            )
                                         }
                                     />
                                 )}

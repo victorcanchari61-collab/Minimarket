@@ -146,9 +146,8 @@
 }
 
 /*
- * Tema por sistema. Cada sistema (POS, ERP, SCM, WMS, RR. HH., CRM,
- * E-commerce, BI) fija solo su tono y su croma; el resto de la escala sale de
- * ahí. El contenedor con .sys-theme también redefine --primary y --ring, así
+ * Tema por sistema. Cada sistema (POS, ERP, SCM, WMS, RR. HH., CRM) fija
+ * solo su tono y su croma; el resto de la escala sale de ahí. El contenedor con .sys-theme también redefine --primary y --ring, así
  * que Button, Checkbox e Input toman el color del sistema sin tocarlos.
  */
 [data-system='pos'] {
@@ -157,10 +156,6 @@
 }
 [data-system='erp'] {
     --sys-h: 288;
-    --sys-c: 0.19;
-}
-[data-system='ecommerce'] {
-    --sys-h: 335;
     --sys-c: 0.19;
 }
 [data-system='hcm'] {
@@ -178,10 +173,6 @@
 [data-system='scm'] {
     --sys-h: 182;
     --sys-c: 0.12;
-}
-[data-system='bi'] {
-    --sys-h: 222;
-    --sys-c: 0.13;
 }
 
 .sys-theme {
