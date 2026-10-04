@@ -229,45 +229,25 @@ Sistema integrado para la gestión integral de cadenas de minimarkets, compuesto
 
 ---
 
-## 7. E-commerce y Delivery
+## 7. BI y Analítica
 
-### 7.1 Tienda virtual / app
-- **Catálogo online sincronizado con inventario**: Visibilidad en tiempo real
-- **Carrito y checkout**: Carrito de compras y proceso de pago
-- **Pasarela de pagos**: Integración con pasarelas bancarias
-
-### 7.2 Pedidos
-- **Pedidos web**: Compra a través de sitio web
-- **Pedidos WhatsApp**: Pedidos mediante mensaje directo
-- **Integración con apps (Rappi, PedidosYa)**: Integración con plataformas externas
-- **Preparación en tienda**: Cola de preparación para pickup
-
-### 7.3 Delivery
-- **Zonas y tarifas**: Áreas de cobertura y costos
-- **Asignación de repartidores**: Distribución de pedidos a riders
-- **Seguimiento del pedido**: Estado en tiempo real (preparando, en camino, entregado)
-
----
-
-## 8. BI y Analítica
-
-### 8.1 Ventas
+### 7.1 Ventas
 - Análisis por tienda, hora del día, categoría de producto
 - Rendimiento por SKU y por cajero
 
-### 8.2 Inventario
+### 7.2 Inventario
 - Rotación de stock, quiebres (stock-out), días de inventario
 - Control de mermas y pérdidas
 
-### 8.3 Rentabilidad
+### 7.3 Rentabilidad
 - Margen por producto, categoría y sucursal
 - Análisis de costo vs. precio
 
-### 8.4 Operaciones
+### 7.4 Operaciones
 - Productividad por tienda y por turno
 - Cumplimiento de reposición y despachos
 
-### 8.5 Gerencial
+### 7.5 Gerencial
 - Dashboards ejecutivos: Indicadores clave para toma de decisiones
 - Alertas y KPIs por sucursal
 - Presupuesto vs. real: Variance analysis
