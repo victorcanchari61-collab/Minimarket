@@ -37,3 +37,19 @@ test('the demo user seeder is idempotent', function () {
 
     expect(App\Models\User::where('email', DemoUserSeeder::EMAIL)->count())->toBe(1);
 });
+
+test('the systems screen and every known system render', function () {
+    $this->get(route('systems.index'))->assertOk();
+
+    foreach (App\Enums\SystemKey::cases() as $system) {
+        $this->get(route('systems.show', $system))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('sistema')
+                ->where('system', $system->value));
+    }
+});
+
+test('an unknown system returns 404', function () {
+    $this->get('/sistemas/ecommerce')->assertNotFound();
+});

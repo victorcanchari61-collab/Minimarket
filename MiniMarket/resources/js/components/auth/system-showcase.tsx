@@ -1,7 +1,7 @@
 import { Pause, Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { SYSTEM_LIST } from '@/lib/systems';
+import { LOGIN_SYSTEM_LIST } from '@/lib/systems';
 import type { StatusTone, SystemDefinition } from '@/lib/systems';
 
 const SLIDE_SECONDS = 6;
@@ -20,13 +20,13 @@ export default function SystemShowcase({
 }) {
     const initial = Math.max(
         0,
-        SYSTEM_LIST.findIndex((item) => item.key === system.key),
+        LOGIN_SYSTEM_LIST.findIndex((item) => item.key === system.key),
     );
     const [active, setActive] = useState(initial);
     const [paused, setPaused] = useState(false);
 
-    const systemCount = SYSTEM_LIST.length;
-    const current = SYSTEM_LIST[active];
+    const systemCount = LOGIN_SYSTEM_LIST.length;
+    const current = LOGIN_SYSTEM_LIST[active];
 
     useEffect(() => {
         setActive(initial);
@@ -45,7 +45,7 @@ export default function SystemShowcase({
                 aria-label="Sistemas de la plataforma"
                 className="flex flex-wrap gap-2"
             >
-                {SYSTEM_LIST.map((item, index) => {
+                {LOGIN_SYSTEM_LIST.map((item, index) => {
                     const isActive = index === active;
 
                     return (
@@ -94,7 +94,7 @@ export default function SystemShowcase({
                     <span className="font-semibold text-(--sys-200)">
                         {current.fullName}:
                     </span>{' '}
-                    {current.modules.map((module) => module.label).join(' · ')}
+                    {current.modules.join(' · ')}
                 </p>
 
                 <div
@@ -146,7 +146,7 @@ export default function SystemShowcase({
 
             <div className="mt-8 flex items-center gap-3">
                 <div className="flex flex-1 gap-2">
-                    {SYSTEM_LIST.map((item, index) => (
+                    {LOGIN_SYSTEM_LIST.map((item, index) => (
                         <button
                             key={item.key}
                             type="button"

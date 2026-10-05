@@ -22,7 +22,7 @@ export default function Login({ demoCredentials }: Props) {
 
     useEffect(() => {
         if (getToken()) {
-            router.visit('/dashboard', { replace: true });
+            router.visit('/sistemas', { replace: true });
         }
     }, []);
 
@@ -44,7 +44,7 @@ export default function Login({ demoCredentials }: Props) {
 
         try {
             await login(email, password, remember);
-            router.visit('/dashboard');
+            router.visit('/sistemas');
         } catch (error) {
             if (error instanceof ApiError) {
                 setErrors({

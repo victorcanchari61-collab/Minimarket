@@ -47,52 +47,90 @@
 }
 
 /*
- * Tema por sistema. Cada sistema (POS, ERP, SCM, WMS, RR. HH., CRM) fija
- * solo su tono y su croma; el resto de la escala sale de ahí. El contenedor con .sys-theme también redefine --primary y --ring, así
- * que Button, Checkbox e Input toman el color del sistema sin tocarlos.
+ * Tema por sistema. Cada sistema define su paleta (degradado, acento,
+ * superficie y texto) y de ahí salen el resto de tonos. Cualquier contenedor
+ * con data-system="..." toma los colores de ese sistema; con .sys-theme además
+ * redefine --primary y --ring para que los controles usen su color.
  */
 [data-system='pos'] {
-    --sys-h: 262;
-    --sys-c: 0.19;
+    --grad-start: #ff512f;
+    --grad-end: #dd2476;
+    --accent: #ffc371;
+    --surface: #fff5f2;
+    --text: #2b0e1a;
 }
 [data-system='erp'] {
-    --sys-h: 288;
-    --sys-c: 0.19;
-}
-[data-system='hcm'] {
-    --sys-h: 12;
-    --sys-c: 0.19;
-}
-[data-system='wms'] {
-    --sys-h: 58;
-    --sys-c: 0.15;
-}
-[data-system='crm'] {
-    --sys-h: 150;
-    --sys-c: 0.14;
+    --grad-start: #4f46e5;
+    --grad-end: #9333ea;
+    --accent: #f59e0b;
+    --surface: #f5f5ff;
+    --text: #1e1b4b;
 }
 [data-system='scm'] {
-    --sys-h: 182;
-    --sys-c: 0.12;
+    --grad-start: #0072ff;
+    --grad-end: #00c6ff;
+    --accent: #ff7a18;
+    --surface: #f0f7ff;
+    --text: #0b1f3a;
+}
+[data-system='wms'] {
+    --grad-start: #f83600;
+    --grad-end: #f9d423;
+    --accent: #2d1b69;
+    --surface: #fff9ec;
+    --text: #1f1300;
+}
+[data-system='hcm'] {
+    --grad-start: #ff0844;
+    --grad-end: #ffb199;
+    --accent: #5b2a86;
+    --surface: #fff1f3;
+    --text: #2a0a14;
+}
+[data-system='crm'] {
+    --grad-start: #11998e;
+    --grad-end: #38ef7d;
+    --accent: #ff6b35;
+    --surface: #f0faf6;
+    --text: #0a2e26;
+}
+[data-system='bi'] {
+    --grad-start: #ee3224;
+    --grad-end: #6a0dc4;
+    --accent: #ffb020;
+    --surface: #f6f3fb;
+    --text: #1a1033;
+}
+
+[data-system] {
+    --grad: linear-gradient(90deg, var(--grad-start), var(--grad-end));
+
+    --sys-950: color-mix(
+        in oklab,
+        color-mix(in oklab, var(--grad-start) 90%, var(--grad-end)),
+        black 84%
+    );
+    --sys-900: color-mix(
+        in oklab,
+        color-mix(in oklab, var(--grad-start) 80%, var(--grad-end)),
+        black 74%
+    );
+    --sys-800: color-mix(in oklab, var(--grad-start), black 64%);
+    --sys-700: color-mix(in oklab, var(--grad-start), black 46%);
+    --sys-600: color-mix(in oklab, var(--grad-start), black 24%);
+    --sys-500: color-mix(in oklab, var(--grad-start), black 8%);
+    --sys-400: color-mix(in oklab, var(--grad-start) 70%, white);
+    --sys-300: color-mix(in oklab, var(--grad-end) 34%, white);
+    --sys-200: color-mix(in oklab, var(--grad-start) 12%, white);
+    --sys-50: color-mix(in oklab, var(--surface) 45%, white);
 }
 
 .sys-theme {
-    --sys-950: oklch(0.2 calc(var(--sys-c) * 0.6) var(--sys-h));
-    --sys-900: oklch(0.27 calc(var(--sys-c) * 0.75) var(--sys-h));
-    --sys-800: oklch(0.34 calc(var(--sys-c) * 0.9) var(--sys-h));
-    --sys-700: oklch(0.43 var(--sys-c) var(--sys-h));
-    --sys-600: oklch(0.52 var(--sys-c) var(--sys-h));
-    --sys-500: oklch(0.6 var(--sys-c) var(--sys-h));
-    --sys-400: oklch(0.72 calc(var(--sys-c) * 0.9) var(--sys-h));
-    --sys-300: oklch(0.82 calc(var(--sys-c) * 0.6) var(--sys-h));
-    --sys-200: oklch(0.88 calc(var(--sys-c) * 0.35) var(--sys-h));
-    --sys-50: oklch(0.985 calc(var(--sys-c) * 0.06) var(--sys-h));
-
     --primary: var(--sys-600);
     --primary-foreground: oklch(0.99 0 0);
     --ring: var(--sys-400);
-    --input: oklch(0.9 calc(var(--sys-c) * 0.08) var(--sys-h));
-    --border: oklch(0.92 calc(var(--sys-c) * 0.06) var(--sys-h));
+    --input: color-mix(in oklab, var(--grad-start) 14%, #e5e7eb);
+    --border: color-mix(in oklab, var(--grad-start) 8%, #e5e7eb);
 
     /* Los --color-* de @theme se resuelven en :root; hay que reasignarlos aquí. */
     --color-primary: var(--primary);
@@ -104,6 +142,11 @@
 
 .sys-panel {
     background:
+        radial-gradient(
+            70% 45% at 100% 0%,
+            color-mix(in oklab, var(--grad-end) 26%, transparent) 0%,
+            transparent 70%
+        ),
         radial-gradient(
             85% 55% at 8% 108%,
             color-mix(in oklch, var(--sys-600) 80%, transparent) 0%,

@@ -2,32 +2,23 @@ import {
     Banknote,
     Boxes,
     Building2,
-    ClipboardCheck,
+    ChartColumn,
     Clock,
-    CreditCard,
     FileText,
-    Handshake,
-    HardHat,
     Heart,
-    Landmark,
-    Layers,
+    LayoutDashboard,
     Megaphone,
-    MessageSquareWarning,
     Package,
     PackageOpen,
+    Percent,
     Receipt,
     RefreshCw,
     Route,
     ScanBarcode,
     ShoppingBag,
     ShoppingCart,
-    Smile,
     Star,
-    Store,
-    Tag,
-    Target,
     TrendingUp,
-    TriangleAlert,
     Truck,
     UserRound,
     Users,
@@ -38,7 +29,7 @@ import type { LucideIcon } from 'lucide-react';
 
 export const BRAND_NAME = 'MiniMarket';
 
-export type SystemKey = 'pos' | 'erp' | 'scm' | 'wms' | 'hcm' | 'crm';
+export type SystemKey = 'pos' | 'erp' | 'scm' | 'wms' | 'hcm' | 'crm' | 'bi';
 
 export type StatusTone = 'ok' | 'warn' | 'info' | 'bad';
 
@@ -50,11 +41,6 @@ export type ShowcaseRow = {
     tone: StatusTone;
 };
 
-export type SystemModule = {
-    label: string;
-    icon: LucideIcon;
-};
-
 export type SystemDefinition = {
     key: SystemKey;
     name: string;
@@ -62,7 +48,7 @@ export type SystemDefinition = {
     icon: LucideIcon;
     headline: string;
     blurb: string;
-    modules: SystemModule[];
+    modules: string[];
     rows: [ShowcaseRow, ShowcaseRow, ShowcaseRow];
     footer: string;
 };
@@ -76,11 +62,13 @@ export const SYSTEMS: Record<SystemKey, SystemDefinition> = {
         headline: 'Cada venta queda registrada una sola vez',
         blurb: 'Venta rápida con código de barras, comprobantes electrónicos a SUNAT, caja y medios de pago en el mismo registro.',
         modules: [
-            { label: 'Ventas', icon: Receipt },
-            { label: 'Facturación', icon: FileText },
-            { label: 'Caja', icon: Wallet },
-            { label: 'Pagos', icon: CreditCard },
-            { label: 'Promociones', icon: Tag },
+            'Ventas',
+            'Facturación electrónica',
+            'Caja',
+            'Medios de pago',
+            'Promociones y precios',
+            'Devoluciones y anulaciones',
+            'Seguridad y configuración',
         ],
         rows: [
             {
@@ -116,11 +104,13 @@ export const SYSTEMS: Record<SystemKey, SystemDefinition> = {
         headline: 'Un solo núcleo para todas las sucursales',
         blurb: 'Catálogo, inventario, compras, finanzas y sucursales sobre los mismos datos, con kardex valorizado y control de vencimientos.',
         modules: [
-            { label: 'Catálogo', icon: Boxes },
-            { label: 'Inventario', icon: Package },
-            { label: 'Compras', icon: ShoppingBag },
-            { label: 'Finanzas', icon: Landmark },
-            { label: 'Sucursales', icon: Store },
+            'Catálogo y maestros',
+            'Inventario',
+            'Compras',
+            'Ventas y distribución',
+            'Finanzas y contabilidad',
+            'Activos fijos',
+            'Administración del sistema',
         ],
         rows: [
             {
@@ -156,11 +146,11 @@ export const SYSTEMS: Record<SystemKey, SystemDefinition> = {
         headline: 'Pide lo justo antes de que se acabe',
         blurb: 'Pronóstico de demanda, reposición por tienda, abastecimiento a proveedores y distribución, para que cada sucursal tenga lo que vende.',
         modules: [
-            { label: 'Demanda', icon: TrendingUp },
-            { label: 'Reposición', icon: RefreshCw },
-            { label: 'Abastecimiento', icon: Handshake },
-            { label: 'Distribución', icon: Route },
-            { label: 'Mermas', icon: TriangleAlert },
+            'Planeación de la demanda',
+            'Reposición',
+            'Abastecimiento',
+            'Distribución y transporte',
+            'Control de mermas y calidad',
         ],
         rows: [
             {
@@ -196,11 +186,13 @@ export const SYSTEMS: Record<SystemKey, SystemDefinition> = {
         headline: 'Cada pallet en su ubicación, cada pedido sin errores',
         blurb: 'Recepción contra orden de compra, almacenamiento por ubicación, picking con escáner y despacho consolidado por tienda.',
         modules: [
-            { label: 'Recepción', icon: PackageOpen },
-            { label: 'Almacenamiento', icon: Layers },
-            { label: 'Picking', icon: ScanBarcode },
-            { label: 'Despacho', icon: Truck },
-            { label: 'Inventarios', icon: ClipboardCheck },
+            'Estructura del almacén',
+            'Recepción',
+            'Almacenamiento',
+            'Picking',
+            'Packing y despacho',
+            'Inventarios',
+            'Devoluciones (logística inversa)',
         ],
         rows: [
             {
@@ -236,11 +228,12 @@ export const SYSTEMS: Record<SystemKey, SystemDefinition> = {
         headline: 'Personas, turnos y planilla en un solo lugar',
         blurb: 'Legajos, asistencia y turnos por tienda, planilla con boletas electrónicas, desempeño y seguridad ocupacional.',
         modules: [
-            { label: 'Personal', icon: UserRound },
-            { label: 'Asistencia', icon: Clock },
-            { label: 'Planilla', icon: Banknote },
-            { label: 'Desempeño', icon: Target },
-            { label: 'Seguridad', icon: HardHat },
+            'Administración de personal',
+            'Asistencia y turnos',
+            'Planilla',
+            'Compensaciones y desempeño',
+            'Reclutamiento y capacitación',
+            'Seguridad y salud ocupacional',
         ],
         rows: [
             {
@@ -276,11 +269,10 @@ export const SYSTEMS: Record<SystemKey, SystemDefinition> = {
         headline: 'Un cliente, todas sus compras',
         blurb: 'Base única de clientes, programa de puntos con niveles, campañas por WhatsApp y SMS, reclamos y encuestas de satisfacción.',
         modules: [
-            { label: 'Clientes', icon: Users },
-            { label: 'Puntos', icon: Star },
-            { label: 'Campañas', icon: Megaphone },
-            { label: 'Reclamos', icon: MessageSquareWarning },
-            { label: 'Encuestas', icon: Smile },
+            'Clientes',
+            'Programa de puntos',
+            'Campañas',
+            'Atención al cliente',
         ],
         rows: [
             {
@@ -307,6 +299,46 @@ export const SYSTEMS: Record<SystemKey, SystemDefinition> = {
         ],
         footer: 'Clientes registrados · 18,420',
     },
+
+    bi: {
+        key: 'bi',
+        name: 'BI',
+        fullName: 'Analítica del negocio',
+        icon: ChartColumn,
+        headline: 'Qué se vende, dónde y a qué hora',
+        blurb: 'Ventas, inventario, rentabilidad y operaciones en dashboards ejecutivos, con alertas y KPIs por sucursal.',
+        modules: [
+            'Ventas',
+            'Inventario',
+            'Rentabilidad',
+            'Operaciones',
+            'Gerencial',
+        ],
+        rows: [
+            {
+                icon: TrendingUp,
+                title: 'Hora pico',
+                subtitle: 'Miraflores · 6:00 – 7:00 p. m.',
+                status: 'Hoy',
+                tone: 'info',
+            },
+            {
+                icon: Percent,
+                title: 'Margen en bebidas',
+                subtitle: '31.4% · +1.2 puntos vs. agosto',
+                status: 'Sube',
+                tone: 'ok',
+            },
+            {
+                icon: LayoutDashboard,
+                title: 'Ventas vs. presupuesto',
+                subtitle: 'Septiembre · 103% del objetivo',
+                status: 'Sobre meta',
+                tone: 'ok',
+            },
+        ],
+        footer: 'Ventas del mes · S/ 284,900.00',
+    },
 };
 
 /** Orden en que se presentan los sistemas (el del documento de arquitectura). */
@@ -317,6 +349,7 @@ export const SYSTEM_LIST: SystemDefinition[] = [
     SYSTEMS.wms,
     SYSTEMS.hcm,
     SYSTEMS.crm,
+    SYSTEMS.bi,
 ];
 
 const DEFAULT_SYSTEM: SystemKey = 'pos';
@@ -340,3 +373,8 @@ export function resolveSystem(search = ''): SystemDefinition {
 
     return SYSTEMS[isSystemKey(fromEnv) ? fromEnv : DEFAULT_SYSTEM];
 }
+
+/** Sistemas que se presentan en el panel del login (BI no se muestra ahí). */
+export const LOGIN_SYSTEM_LIST: SystemDefinition[] = SYSTEM_LIST.filter(
+    (system) => system.key !== 'bi',
+);
