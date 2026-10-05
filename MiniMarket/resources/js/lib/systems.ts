@@ -27,6 +27,7 @@ import {
     Warehouse,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { moduleLabels } from '@/lib/navigation';
 
 export const BRAND_NAME = 'MiniMarket';
 
@@ -69,15 +70,7 @@ export const SYSTEMS: Record<SystemKey, SystemDefinition> = {
         icon: ShoppingCart,
         headline: 'Cada venta queda registrada una sola vez',
         blurb: 'Venta rápida con código de barras, comprobantes electrónicos a SUNAT, caja y medios de pago en el mismo registro.',
-        modules: [
-            'Ventas',
-            'Facturación electrónica',
-            'Caja',
-            'Medios de pago',
-            'Promociones y precios',
-            'Devoluciones y anulaciones',
-            'Seguridad y configuración',
-        ],
+        modules: moduleLabels('pos'),
         rows: [
             {
                 icon: Receipt,
@@ -111,15 +104,7 @@ export const SYSTEMS: Record<SystemKey, SystemDefinition> = {
         icon: Building2,
         headline: 'Un solo núcleo para todas las sucursales',
         blurb: 'Catálogo, inventario, compras, finanzas y sucursales sobre los mismos datos, con kardex valorizado y control de vencimientos.',
-        modules: [
-            'Catálogo y maestros',
-            'Inventario',
-            'Compras',
-            'Ventas y distribución',
-            'Finanzas y contabilidad',
-            'Activos fijos',
-            'Administración del sistema',
-        ],
+        modules: moduleLabels('erp'),
         rows: [
             {
                 icon: Boxes,
@@ -153,13 +138,7 @@ export const SYSTEMS: Record<SystemKey, SystemDefinition> = {
         icon: Truck,
         headline: 'Pide lo justo antes de que se acabe',
         blurb: 'Pronóstico de demanda, reposición por tienda, abastecimiento a proveedores y distribución, para que cada sucursal tenga lo que vende.',
-        modules: [
-            'Planeación de la demanda',
-            'Reposición',
-            'Abastecimiento',
-            'Distribución y transporte',
-            'Control de mermas y calidad',
-        ],
+        modules: moduleLabels('scm'),
         rows: [
             {
                 icon: TrendingUp,
@@ -193,15 +172,7 @@ export const SYSTEMS: Record<SystemKey, SystemDefinition> = {
         icon: Warehouse,
         headline: 'Cada pallet en su ubicación, cada pedido sin errores',
         blurb: 'Recepción contra orden de compra, almacenamiento por ubicación, picking con escáner y despacho consolidado por tienda.',
-        modules: [
-            'Estructura del almacén',
-            'Recepción',
-            'Almacenamiento',
-            'Picking',
-            'Packing y despacho',
-            'Inventarios',
-            'Devoluciones (logística inversa)',
-        ],
+        modules: moduleLabels('wms'),
         rows: [
             {
                 icon: PackageOpen,
@@ -235,14 +206,7 @@ export const SYSTEMS: Record<SystemKey, SystemDefinition> = {
         icon: Users,
         headline: 'Personas, turnos y planilla en un solo lugar',
         blurb: 'Legajos, asistencia y turnos por tienda, planilla con boletas electrónicas, desempeño y seguridad ocupacional.',
-        modules: [
-            'Administración de personal',
-            'Asistencia y turnos',
-            'Planilla',
-            'Compensaciones y desempeño',
-            'Reclutamiento y capacitación',
-            'Seguridad y salud ocupacional',
-        ],
+        modules: moduleLabels('hcm'),
         rows: [
             {
                 icon: UserRound,
@@ -276,12 +240,7 @@ export const SYSTEMS: Record<SystemKey, SystemDefinition> = {
         icon: Heart,
         headline: 'Un cliente, todas sus compras',
         blurb: 'Base única de clientes, programa de puntos con niveles, campañas por WhatsApp y SMS, reclamos y encuestas de satisfacción.',
-        modules: [
-            'Clientes',
-            'Programa de puntos',
-            'Campañas',
-            'Atención al cliente',
-        ],
+        modules: moduleLabels('crm'),
         rows: [
             {
                 icon: Users,
@@ -315,13 +274,7 @@ export const SYSTEMS: Record<SystemKey, SystemDefinition> = {
         icon: ChartColumn,
         headline: 'Qué se vende, dónde y a qué hora',
         blurb: 'Ventas, inventario, rentabilidad y operaciones en dashboards ejecutivos, con alertas y KPIs por sucursal.',
-        modules: [
-            'Ventas',
-            'Inventario',
-            'Rentabilidad',
-            'Operaciones',
-            'Gerencial',
-        ],
+        modules: moduleLabels('bi'),
         rows: [
             {
                 icon: TrendingUp,
@@ -393,14 +346,7 @@ export const SETTINGS: PortalEntry = {
     name: 'Configuraciones',
     fullName: 'Usuarios, accesos y parámetros',
     icon: Settings,
-    modules: [
-        'Usuarios',
-        'Roles y permisos',
-        'Empresa y sucursales',
-        'Terminales y series',
-        'Auditoría',
-        'Integraciones',
-    ],
+    modules: moduleLabels('config'),
 };
 
 export const PORTAL_ENTRIES: PortalEntry[] = [...SYSTEM_LIST, SETTINGS];

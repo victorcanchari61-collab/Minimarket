@@ -331,3 +331,13 @@ Reparto de responsabilidades en este ejemplo:
 | 2 | Tablas largas | Posponer la virtualización hasta que una pantalla supere ~300 filas. |
 | 3 | Tipos de la API | Escribirlos a mano en cada feature al inicio; si crecen mucho, generarlos desde los Resources del backend. |
 | 4 | Pruebas de frontend | Agregar Vitest + Testing Library cuando exista el primer componente genérico (`DataTable`). |
+
+---
+
+## 11. Navegación por sistema (sidebar)
+
+- **Una sola fuente de datos:** `lib/navigation.ts` define, para cada sistema, sus módulos y submódulos (nombre + icono). El sidebar, la pantalla de sistemas y los conteos de módulos leen de ahí; para agregar una opción nueva solo se edita ese archivo.
+- **Un solo componente:** `components/system/system-sidebar.tsx` sirve a todos los sistemas. El color lo pone el tema (`data-system`), no el componente.
+- **Comportamiento:** fondo blanco; los módulos se despliegan y muestran sus submódulos; el módulo de la URL se abre solo y su submódulo queda resaltado. Se puede **contraer** a una columna de iconos (el estado se recuerda en el navegador); en móvil se abre como panel lateral.
+- **URL:** `/sistemas/{sistema}/{módulo}/{submódulo}` con los nombres en minúsculas y sin tildes (`/sistemas/erp/inventario/kardex-valorizado`). La URL es la fuente de verdad de qué opción está activa.
+- **Marco de página:** `layouts/system-layout.tsx` junta el sidebar, la barra de usuario y el contenido; las pantallas de cada submódulo solo renderizan su contenido dentro de ese layout.

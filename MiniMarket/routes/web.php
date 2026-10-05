@@ -9,6 +9,9 @@ Route::redirect('/', '/login')->name('home');
 Route::get('/login', LoginPageController::class)->name('login');
 
 Route::inertia('/sistemas', 'sistemas')->name('systems.index');
-Route::get('/sistemas/{system}', fn (SystemKey $system) => Inertia::render('sistema', [
+
+Route::get('/sistemas/{system}/{module?}/{item?}', fn (SystemKey $system, ?string $module = null, ?string $item = null) => Inertia::render('sistema', [
     'system' => $system->value,
-]))->name('systems.show');
+    'module' => $module,
+    'item' => $item,
+]))->where(['module' => '[a-z0-9-]+', 'item' => '[a-z0-9-]+'])->name('systems.show');

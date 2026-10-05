@@ -53,3 +53,15 @@ test('the systems screen and every known system render', function () {
 test('an unknown system returns 404', function () {
     $this->get('/sistemas/ecommerce')->assertNotFound();
 });
+
+test('a system page accepts a module and a submodule', function () {
+    $this->get('/sistemas/erp/inventario/kardex-valorizado')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('sistema')
+            ->where('system', 'erp')
+            ->where('module', 'inventario')
+            ->where('item', 'kardex-valorizado'));
+
+    $this->get('/sistemas/erp/Inventario%20X')->assertNotFound();
+});
