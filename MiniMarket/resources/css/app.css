@@ -224,3 +224,128 @@
     background: var(--sys-500);
     color: oklch(0.99 0 0);
 }
+
+/*
+ * Base de los componentes reutilizables (components/ui y components/data).
+ * Medidas, tonos y el acento del sistema viven aquí; los componentes solo
+ * los consumen, así que cambiar un valor lo cambia en todas las pantallas.
+ */
+@theme {
+    --radius-field: 6px;
+    --radius-panel: 20px;
+    --shadow-panel: 0 18px 45px -18px rgb(15 23 42 / 0.25);
+
+    /* Altura de TODOS los controles: sm tablas y barras · md formularios · lg login. */
+    --height-field-sm: 2.25rem;
+    --height-field-md: 2.5rem;
+    --height-field-lg: 3rem;
+}
+
+/* inline: el valor se resuelve en el elemento, así que respeta data-system. */
+@theme inline {
+    --color-surface: var(--surface);
+    --color-surface-alt: var(--surface-alt);
+    --color-ink: var(--ink);
+    --color-ink-muted: var(--ink-muted);
+    --color-ink-soft: var(--ink-soft);
+    --color-line: var(--line);
+    --color-line-strong: var(--line-strong);
+    --color-success: var(--success);
+    --color-warning: var(--warning);
+    --color-danger: var(--danger);
+    --color-info: var(--info);
+    --color-accent: var(--accent);
+    --color-accent-hover: var(--accent-hover);
+    --color-accent-ink: var(--accent-ink);
+    --color-accent-soft: var(--accent-soft);
+    --color-accent-ring: var(--accent-ring);
+}
+
+:root {
+    --surface: #ffffff;
+    --surface-alt: #f9fafb;
+    --ink: oklch(0.2 0.02 260);
+    --ink-muted: #6b7280;
+    --ink-soft: #9ca3af;
+    --line: #e5e7eb;
+    --line-strong: #d1d5db;
+
+    --success: #16a34a;
+    --warning: #f59e0b;
+    --danger: #dc2626;
+    --info: #2563eb;
+
+    /* Acento por defecto; dentro de data-system lo reemplaza el del sistema. */
+    --accent: oklch(0.52 0.19 262);
+    --accent-hover: oklch(0.45 0.19 262);
+    --accent-ink: oklch(0.42 0.18 262);
+    --accent-soft: color-mix(in oklab, var(--accent) 10%, white);
+    --accent-ring: color-mix(in oklab, var(--accent) 25%, transparent);
+}
+
+[data-system] {
+    --accent: var(--sys-600);
+    --accent-hover: var(--sys-700);
+    --accent-ink: var(--sys-700);
+    --accent-soft: color-mix(in oklab, var(--sys-600) 10%, white);
+    --accent-ring: color-mix(in oklab, var(--sys-600) 25%, transparent);
+}
+
+/* Tonos para insignias, indicadores y avisos: un color base y tres derivados. */
+.tone-neutral {
+    --tone-solid: var(--ink-muted);
+    --tone-bg: #f3f4f6;
+    --tone-fg: #4b5563;
+    --tone-line: #e5e7eb;
+}
+.tone-accent {
+    --tone-solid: var(--accent);
+    --tone-bg: var(--accent-soft);
+    --tone-fg: var(--accent-ink);
+    --tone-line: color-mix(in oklab, var(--accent) 28%, white);
+}
+.tone-success {
+    --tone-solid: var(--success);
+    --tone-bg: color-mix(in oklab, var(--success) 10%, white);
+    --tone-fg: color-mix(in oklab, var(--success), black 28%);
+    --tone-line: color-mix(in oklab, var(--success) 30%, white);
+}
+.tone-warning {
+    --tone-solid: var(--warning);
+    --tone-bg: color-mix(in oklab, var(--warning) 12%, white);
+    --tone-fg: color-mix(in oklab, var(--warning), black 45%);
+    --tone-line: color-mix(in oklab, var(--warning) 35%, white);
+}
+.tone-danger {
+    --tone-solid: var(--danger);
+    --tone-bg: color-mix(in oklab, var(--danger) 8%, white);
+    --tone-fg: color-mix(in oklab, var(--danger), black 22%);
+    --tone-line: color-mix(in oklab, var(--danger) 30%, white);
+}
+.tone-info {
+    --tone-solid: var(--info);
+    --tone-bg: color-mix(in oklab, var(--info) 8%, white);
+    --tone-fg: color-mix(in oklab, var(--info), black 22%);
+    --tone-line: color-mix(in oklab, var(--info) 30%, white);
+}
+
+@utility ui-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+@utility ui-surface {
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+}
+
+/* Barras de desplazamiento ocultas en filas que se deslizan (móvil). */
+@utility no-scrollbar {
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}

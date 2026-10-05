@@ -79,6 +79,9 @@ export default function SystemLayout({
         >
             <IconGradientDefs />
 
+            {/* Destino de los modales: dentro del data-system para heredar su color. */}
+            <div id="modal-root" />
+
             <aside className="sticky top-0 hidden h-dvh shrink-0 lg:block">
                 <SystemSidebar
                     system={system}

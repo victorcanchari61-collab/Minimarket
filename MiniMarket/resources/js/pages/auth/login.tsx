@@ -2,7 +2,6 @@ import { Head, router } from '@inertiajs/react';
 import { KeyRound, Mail } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -65,91 +64,51 @@ export default function Login({ demoCredentials }: Props) {
 
             <form onSubmit={submit} className="flex flex-col gap-6" noValidate>
                 <div className="grid gap-5">
-                    <div className="grid gap-2">
-                        <label htmlFor="email" className="text-sm font-medium">
-                            Correo electrónico
-                        </label>
-                        <div className="relative">
-                            <Mail
-                                aria-hidden
-                                className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-muted-foreground"
-                            />
-                            <Input
-                                id="email"
-                                type="email"
-                                name="email"
-                                value={email}
-                                onChange={(event) =>
-                                    setEmail(event.target.value)
-                                }
-                                required
-                                autoFocus
-                                autoComplete="email"
-                                placeholder="nombre@empresa.com"
-                                className="pl-11"
-                                aria-invalid={!!errors.email}
-                                aria-describedby={
-                                    errors.email ? 'email-error' : undefined
-                                }
-                            />
-                        </div>
-                        {errors.email && (
-                            <p
-                                id="email-error"
-                                role="alert"
-                                className="text-sm text-destructive"
-                            >
-                                {errors.email}
-                            </p>
-                        )}
-                    </div>
+                    <Input
+                        label="Correo electrónico"
+                        icon={<Mail aria-hidden />}
+                        type="email"
+                        name="email"
+                        size="lg"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        error={errors.email}
+                        required
+                        autoFocus
+                        autoComplete="email"
+                        placeholder="nombre@empresa.com"
+                    />
 
-                    <div className="grid gap-2">
-                        <label
-                            htmlFor="password"
-                            className="text-sm font-medium"
-                        >
-                            Contraseña
-                        </label>
-                        <PasswordInput
-                            id="password"
-                            name="password"
-                            value={password}
-                            onChange={(event) =>
-                                setPassword(event.target.value)
-                            }
-                            required
-                            autoComplete="current-password"
-                            placeholder="Tu contraseña"
-                            aria-invalid={!!errors.password}
-                        />
-                        {errors.password && (
-                            <p
-                                role="alert"
-                                className="text-sm text-destructive"
-                            >
-                                {errors.password}
-                            </p>
-                        )}
-                    </div>
+                    <Input
+                        label="Contraseña"
+                        type="password"
+                        name="password"
+                        size="lg"
+                        revealable
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        error={errors.password}
+                        required
+                        autoComplete="current-password"
+                        placeholder="Tu contraseña"
+                    />
 
-                    <label className="flex w-fit cursor-pointer items-center gap-2.5 text-sm">
-                        <Checkbox
-                            name="remember"
-                            checked={remember}
-                            onChange={(event) =>
-                                setRemember(event.target.checked)
-                            }
-                        />
-                        Recordarme
-                    </label>
+                    <Checkbox
+                        label="Recordarme"
+                        name="remember"
+                        checked={remember}
+                        onChange={(event) => setRemember(event.target.checked)}
+                        className="w-fit"
+                    />
 
                     <Button
                         ref={submitRef}
                         type="submit"
-                        disabled={processing}
+                        size="lg"
+                        block
+                        loading={processing}
                         data-test="login-button"
-                        className="mt-1 h-12 w-full text-[15px] font-semibold shadow-[0_10px_20px_-10px_var(--sys-600)] active:translate-y-px"
+                        className="mt-1 shadow-[0_10px_20px_-10px_var(--sys-600)]"
                     >
                         {processing ? 'Ingresando…' : 'Iniciar sesión'}
                     </Button>
@@ -157,12 +116,13 @@ export default function Login({ demoCredentials }: Props) {
 
                 {demoCredentials && (
                     <Button
-                        variant="outline"
+                        variant="secondary"
+                        block
                         onClick={fillDemoCredentials}
-                        className="h-11 w-full border-dashed"
+                        className="border-dashed"
                         data-test="demo-credentials-button"
                     >
-                        <KeyRound aria-hidden />
+                        <KeyRound className="size-4" aria-hidden />
                         Usar credenciales de prueba
                     </Button>
                 )}
