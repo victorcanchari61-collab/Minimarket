@@ -216,7 +216,9 @@ export function DataTable<T>({
     const [hidden, setHidden] = useState<string[]>([]);
     const [sort, setSort] = useState<TableQuery['sort']>(null);
     const [search, setSearch] = useState('');
-    const [columnSearch, setColumnSearch] = useState<Record<string, string>>({});
+    const [columnSearch, setColumnSearch] = useState<Record<string, string>>(
+        {},
+    );
     // Celda desde la que se abrió el buscador de columna: el popover se pinta
     // en un portal anclado a ella, porque el área con scroll recortaría lo que
     // se salga de ella.
@@ -226,7 +228,10 @@ export function DataTable<T>({
     } | null>(null);
     // Se fijan al montar: la vista suele pasarlos inline y cambiarían en cada render.
     const [initial] = useState<DataTableFilter[]>(() =>
-        (initialFilters ?? []).map((filter) => ({ ...filter, id: filter.column })),
+        (initialFilters ?? []).map((filter) => ({
+            ...filter,
+            id: filter.column,
+        })),
     );
     const [filters, setFilters] = useState<DataTableFilter[]>(initial);
     const initialOf = (column: string) =>
@@ -444,7 +449,8 @@ export function DataTable<T>({
     const minTableWidth = useMemo(() => {
         const sum = visible.reduce(
             (total, column) =>
-                total + (widths[column.key] ?? column.width ?? MIN_COLUMN_WIDTH),
+                total +
+                (widths[column.key] ?? column.width ?? MIN_COLUMN_WIDTH),
             0,
         );
 
@@ -455,7 +461,10 @@ export function DataTable<T>({
         const fixed = visible.map(
             (column) => widths[column.key] ?? column.width ?? null,
         );
-        const fixedSum = fixed.reduce<number>((sum, width) => sum + (width ?? 0), 0);
+        const fixedSum = fixed.reduce<number>(
+            (sum, width) => sum + (width ?? 0),
+            0,
+        );
         const loose = fixed.filter((width) => width === null).length;
 
         const reserved = `${fixedSum + (actions ? actionsWidth : 0)}px`;
@@ -526,7 +535,9 @@ export function DataTable<T>({
                                 open={panel === 'filters'}
                                 onToggle={() =>
                                     setPanel((current) =>
-                                        current === 'filters' ? null : 'filters',
+                                        current === 'filters'
+                                            ? null
+                                            : 'filters',
                                     )
                                 }
                                 onClose={closePanel}
@@ -541,7 +552,9 @@ export function DataTable<T>({
                                 open={panel === 'columns'}
                                 onOpen={() =>
                                     setPanel((current) =>
-                                        current === 'columns' ? null : 'columns',
+                                        current === 'columns'
+                                            ? null
+                                            : 'columns',
                                     )
                                 }
                                 onClose={closePanel}
@@ -575,11 +588,12 @@ export function DataTable<T>({
 
                                                 setFilters((previous) =>
                                                     start
-                                                        ? previous.map((other) =>
-                                                              other.id ===
-                                                              filter.id
-                                                                  ? start
-                                                                  : other,
+                                                        ? previous.map(
+                                                              (other) =>
+                                                                  other.id ===
+                                                                  filter.id
+                                                                      ? start
+                                                                      : other,
                                                           )
                                                         : previous.filter(
                                                               (other) =>
@@ -591,7 +605,10 @@ export function DataTable<T>({
                                             aria-label="Quitar filtro"
                                             className="cursor-pointer rounded-full p-0.5 hover:bg-surface"
                                         >
-                                            <X className="size-[11px]" aria-hidden />
+                                            <X
+                                                className="size-[11px]"
+                                                aria-hidden
+                                            />
                                         </button>
                                     )}
                                 </span>
@@ -623,7 +640,10 @@ export function DataTable<T>({
                                             aria-label="Quitar búsqueda de columna"
                                             className="cursor-pointer rounded-full p-0.5 hover:bg-surface-alt"
                                         >
-                                            <X className="size-[11px]" aria-hidden />
+                                            <X
+                                                className="size-[11px]"
+                                                aria-hidden
+                                            />
                                         </button>
                                     </span>
                                 ))}
@@ -667,7 +687,8 @@ export function DataTable<T>({
                         <thead>
                             <tr className="text-white">
                                 {visible.map((column) => {
-                                    const isSorted = sort?.column === column.key;
+                                    const isSorted =
+                                        sort?.column === column.key;
                                     const isDragged = dragging === column.key;
                                     const isTarget =
                                         dragOver === column.key &&
@@ -696,7 +717,9 @@ export function DataTable<T>({
                                                 event.preventDefault();
                                                 setDragOver(column.key);
                                             }}
-                                            onDrop={() => handleDrop(column.key)}
+                                            onDrop={() =>
+                                                handleDrop(column.key)
+                                            }
                                             className={cn(
                                                 'group sticky top-0 z-10 overflow-hidden bg-accent px-3 py-1.5',
                                                 resizingKey === column.key &&
@@ -738,7 +761,9 @@ export function DataTable<T>({
                                                     <button
                                                         type="button"
                                                         onClick={() =>
-                                                            toggleSort(column.key)
+                                                            toggleSort(
+                                                                column.key,
+                                                            )
                                                         }
                                                         aria-label={`Ordenar por ${column.label}`}
                                                         className={cn(
@@ -769,7 +794,8 @@ export function DataTable<T>({
                                                     </button>
                                                 )}
 
-                                                {column.searchable !== false && (
+                                                {column.searchable !==
+                                                    false && (
                                                     <button
                                                         type="button"
                                                         onClick={(event) => {
@@ -817,7 +843,10 @@ export function DataTable<T>({
                                                 aria-orientation="vertical"
                                                 aria-label={`Redimensionar ${column.label}`}
                                                 onMouseDown={(event) =>
-                                                    startResize(event, column.key)
+                                                    startResize(
+                                                        event,
+                                                        column.key,
+                                                    )
                                                 }
                                                 onDoubleClick={() =>
                                                     resetWidth(column.key)
@@ -851,30 +880,35 @@ export function DataTable<T>({
 
                         <tbody>
                             {loading &&
-                                Array.from({ length: SKELETON_ROWS }, (_, index) => (
-                                    <tr
-                                        key={`skeleton-${index}`}
-                                        className="border-b border-line"
-                                        aria-hidden
-                                    >
-                                        {visible.map((column) => (
-                                            <td
-                                                key={column.key}
-                                                className="px-3 py-2.5"
-                                            >
-                                                <span className="block h-3 w-3/4 rounded-field bg-line" />
-                                            </td>
-                                        ))}
-                                        {actions && (
-                                            <td className="px-3 py-2.5">
-                                                <span className="mx-auto block h-3 w-1/2 rounded-field bg-line" />
-                                            </td>
-                                        )}
-                                    </tr>
-                                ))}
+                                Array.from(
+                                    { length: SKELETON_ROWS },
+                                    (_, index) => (
+                                        <tr
+                                            key={`skeleton-${index}`}
+                                            className="border-b border-line"
+                                            aria-hidden
+                                        >
+                                            {visible.map((column) => (
+                                                <td
+                                                    key={column.key}
+                                                    className="px-3 py-2.5"
+                                                >
+                                                    <span className="block h-3 w-3/4 rounded-field bg-line" />
+                                                </td>
+                                            ))}
+                                            {actions && (
+                                                <td className="px-3 py-2.5">
+                                                    <span className="mx-auto block h-3 w-1/2 rounded-field bg-line" />
+                                                </td>
+                                            )}
+                                        </tr>
+                                    ),
+                                )}
 
                             {isEmpty && (
-                                <MessageRow colSpan={colSpan}>{empty}</MessageRow>
+                                <MessageRow colSpan={colSpan}>
+                                    {empty}
+                                </MessageRow>
                             )}
 
                             {!loading &&
@@ -894,7 +928,8 @@ export function DataTable<T>({
                                             onRowClick
                                                 ? (event) => {
                                                       if (
-                                                          event.key === 'Enter' &&
+                                                          event.key ===
+                                                              'Enter' &&
                                                           event.target ===
                                                               event.currentTarget
                                                       ) {
@@ -967,7 +1002,10 @@ export function DataTable<T>({
             {/* Móvil: cada fila se convierte en una tarjeta. */}
             <div
                 ref={cardsRef}
-                className={cn('space-y-2 overflow-y-auto sm:hidden', scrollClassName)}
+                className={cn(
+                    'space-y-2 overflow-y-auto sm:hidden',
+                    scrollClassName,
+                )}
             >
                 {loading &&
                     Array.from({ length: 3 }, (_, index) => (
@@ -998,7 +1036,9 @@ export function DataTable<T>({
                                     (row as Record<string, unknown>)[rowKey],
                                 )}
                                 onClick={
-                                    onRowClick ? () => onRowClick(row) : undefined
+                                    onRowClick
+                                        ? () => onRowClick(row)
+                                        : undefined
                                 }
                                 onKeyDown={
                                     onRowClick
@@ -1380,7 +1420,8 @@ function ColumnsButton<T>({
                         })}
                     </div>
                     <p className="border-t border-line px-3 py-2 text-[10px] leading-relaxed text-ink-soft">
-                        Arrastra las cabeceras de la tabla para cambiar su orden.
+                        Arrastra las cabeceras de la tabla para cambiar su
+                        orden.
                     </p>
                 </div>
             )}

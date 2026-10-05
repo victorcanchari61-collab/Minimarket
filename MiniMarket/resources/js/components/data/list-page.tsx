@@ -69,7 +69,9 @@ export function ListPage<T>({
             {/* La tabla trae su propio borde: no se envuelve en tarjeta. */}
             <div>
                 <DataTable {...table} actions={rowActions} />
-                {note && <div className="mt-3 text-xs text-ink-soft">{note}</div>}
+                {note && (
+                    <div className="mt-3 text-xs text-ink-soft">{note}</div>
+                )}
             </div>
 
             {children}

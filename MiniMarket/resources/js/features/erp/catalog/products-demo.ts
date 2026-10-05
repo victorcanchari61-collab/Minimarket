@@ -4,6 +4,8 @@
  * para pedir las siguientes. Se reemplaza por `GET /api/catalog/products`.
  */
 
+import type { TableQuery } from '@/components/data/data-table';
+
 export type Product = {
     id: number;
     sku: string;
@@ -15,16 +17,7 @@ export type Product = {
     status: 'active' | 'inactive';
 };
 
-export type ProductQuery = {
-    search: string;
-    sort: { column: string; direction: 'asc' | 'desc' } | null;
-    filters: {
-        column: string;
-        operator: string;
-        value: string;
-        valueTo?: string;
-    }[];
-};
+export type ProductQuery = TableQuery;
 
 const PAGE_SIZE = 20;
 
@@ -83,7 +76,8 @@ const PRODUCTS: Product[] = Array.from({ length: 160 }, (_, index) => {
     const id = index + 1;
     const category = CATEGORIES[index % CATEGORIES.length];
     const options = NAMES[category];
-    const [base, unit] = options[Math.floor(index / CATEGORIES.length) % options.length];
+    const [base, unit] =
+        options[Math.floor(index / CATEGORIES.length) % options.length];
     const variant = Math.floor(index / (CATEGORIES.length * 3)) + 1;
 
     return {
@@ -174,3 +168,17 @@ export function fetchProductsPage(
         }, 350);
     });
 }
+
+/** Cifras de la cabecera de la pantalla (también de ejemplo). */
+export function productStats() {
+    const active = PRODUCTS.filter((product) => product.status === 'active');
+
+    return {
+        total: PRODUCTS.length,
+        active: active.length,
+        lowStock: active.filter((product) => product.stock < 20).length,
+        categories: new Set(PRODUCTS.map((product) => product.category)).size,
+    };
+}
+
+export const PRODUCT_CATEGORIES = CATEGORIES;
