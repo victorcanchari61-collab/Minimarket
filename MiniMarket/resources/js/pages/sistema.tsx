@@ -1,18 +1,14 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
-import { useEffect } from 'react';
-import { getToken } from '@/lib/api';
+import NotificationBell from '@/components/notification-bell';
+import UserMenu from '@/components/user-menu';
+import { useAuthUser } from '@/hooks/use-auth-user';
 import { BRAND_NAME, findPortalEntry } from '@/lib/systems';
 import type { PortalKey } from '@/lib/systems';
 
 export default function Sistema({ system: key }: { system: PortalKey }) {
     const system = findPortalEntry(key);
-
-    useEffect(() => {
-        if (!getToken()) {
-            router.visit('/login', { replace: true });
-        }
-    }, []);
+    const { user, signOut } = useAuthUser();
 
     return (
         <>
@@ -29,13 +25,34 @@ export default function Sistema({ system: key }: { system: PortalKey }) {
                 />
 
                 <main className="mx-auto max-w-[900px] px-6 py-10">
-                    <Link
-                        href="/sistemas"
-                        className="inline-flex items-center gap-2 rounded-lg text-sm font-medium text-muted-foreground outline-none hover:text-(--text) focus-visible:ring-[3px] focus-visible:ring-(--sys-400)"
-                    >
-                        <ArrowLeft className="size-4" aria-hidden />
-                        {BRAND_NAME}
-                    </Link>
+                    <div className="flex items-center justify-between gap-4">
+                        <Link
+                            href="/sistemas"
+                            className="inline-flex items-center gap-2 rounded-lg text-sm font-medium text-muted-foreground outline-none hover:text-(--text) focus-visible:ring-[3px] focus-visible:ring-(--sys-400)"
+                        >
+                            <ArrowLeft className="size-4" aria-hidden />
+                            {BRAND_NAME}
+                        </Link>
+
+                        {user ? (
+                            <div className="flex items-center gap-3">
+                                <UserMenu
+                                    user={user}
+                                    context={{
+                                        label: system.name,
+                                        icon: system.icon,
+                                    }}
+                                    onSignOut={signOut}
+                                />
+                                <NotificationBell />
+                            </div>
+                        ) : (
+                            <div
+                                aria-hidden
+                                className="h-14 w-60 animate-pulse rounded-full bg-white/80"
+                            />
+                        )}
+                    </div>
 
                     <div className="mt-8 flex items-center gap-4">
                         <span className="grid size-14 place-items-center rounded-2xl bg-[color-mix(in_oklab,var(--grad-end)_14%,white)] text-(--sys-600)">

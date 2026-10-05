@@ -1,36 +1,13 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { ArrowRight, LogOut, ShoppingBasket } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { ArrowRight, ShoppingBasket } from 'lucide-react';
 import type { CSSProperties } from 'react';
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import type { ApiUser } from '@/lib/api';
-import { ApiError, clearToken, fetchUser, getToken, logout } from '@/lib/api';
+import NotificationBell from '@/components/notification-bell';
+import UserMenu from '@/components/user-menu';
+import { useAuthUser } from '@/hooks/use-auth-user';
 import { BRAND_NAME, PORTAL_ENTRIES, SYSTEM_LIST } from '@/lib/systems';
 
 export default function Sistemas() {
-    const [user, setUser] = useState<ApiUser | null>(null);
-
-    useEffect(() => {
-        if (!getToken()) {
-            router.visit('/login', { replace: true });
-
-            return;
-        }
-
-        fetchUser()
-            .then(setUser)
-            .catch((error) => {
-                if (error instanceof ApiError && error.status === 401) {
-                    clearToken();
-                    router.visit('/login', { replace: true });
-                }
-            });
-    }, []);
-
-    const signOut = async () => {
-        await logout().catch(() => undefined);
-        router.visit('/login');
-    };
+    const { user, signOut } = useAuthUser();
 
     return (
         <>
@@ -38,19 +15,17 @@ export default function Sistemas() {
 
             <div className="min-h-dvh bg-[#f3f4f6] font-display text-[#1a1033]">
                 <header className="mx-auto flex max-w-[1180px] items-center justify-end gap-3 px-6 pt-5">
-                    {user && (
-                        <span className="hidden text-sm text-muted-foreground sm:block">
-                            {user.name}
-                        </span>
+                    {user ? (
+                        <>
+                            <UserMenu user={user} onSignOut={signOut} />
+                            <NotificationBell />
+                        </>
+                    ) : (
+                        <div
+                            aria-hidden
+                            className="h-14 w-60 animate-pulse rounded-full bg-white/80"
+                        />
                     )}
-                    <Button
-                        variant="outline"
-                        onClick={signOut}
-                        className="h-10 rounded-xl px-4"
-                    >
-                        <LogOut aria-hidden />
-                        Cerrar sesión
-                    </Button>
                 </header>
 
                 <main className="mx-auto flex max-w-[1180px] flex-col items-center px-6 pt-10 pb-16 sm:pt-16">
