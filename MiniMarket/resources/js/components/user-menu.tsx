@@ -58,35 +58,35 @@ export default function UserMenu({ user, context, onSignOut }: UserMenuProps) {
                 aria-haspopup="menu"
                 aria-expanded={open}
                 aria-controls={open ? menuId : undefined}
-                className="flex h-14 items-center gap-3 rounded-full border border-[#e5e7eb] bg-white py-1.5 pr-4 pl-1.5 text-left shadow-[0_6px_16px_-8px_rgb(16_24_40/0.25)] transition-shadow outline-none hover:shadow-[0_10px_20px_-10px_rgb(16_24_40/0.3)] focus-visible:ring-[3px] focus-visible:ring-(--sys-400,var(--ring))"
+                className="flex h-11 items-center gap-2.5 rounded-full border border-[#e5e7eb] bg-white py-1 pr-3 pl-1 text-left shadow-[0_6px_16px_-8px_rgb(16_24_40/0.25)] transition-shadow outline-none hover:shadow-[0_10px_20px_-10px_rgb(16_24_40/0.3)] focus-visible:ring-[3px] focus-visible:ring-(--sys-400,var(--ring))"
             >
                 <span
                     aria-hidden
-                    className="grid size-11 shrink-0 place-items-center rounded-full bg-(--sys-600,var(--primary)) text-[15px] font-bold text-white"
+                    className="grid size-9 shrink-0 place-items-center rounded-full bg-(--sys-600,var(--primary)) text-[13px] font-bold text-white"
                 >
                     {initialsOf(user.name)}
                 </span>
 
                 <span className="hidden min-w-0 sm:block">
-                    <span className="block max-w-[11rem] truncate text-[15px] leading-tight font-bold text-[#1a1033]">
+                    <span className="block max-w-[11rem] truncate text-sm leading-tight font-bold text-[#1a1033]">
                         {user.name}
                     </span>
-                    <span className="block max-w-[11rem] truncate text-xs text-muted-foreground">
+                    <span className="block max-w-[11rem] truncate text-[11px] leading-tight text-muted-foreground">
                         {user.email}
                     </span>
                 </span>
 
                 {context && (
-                    <span className="hidden items-center gap-1.5 rounded-full bg-[color-mix(in_oklab,var(--sys-600,var(--primary))_12%,white)] px-3 py-1.5 text-xs font-bold tracking-wide text-(--sys-600,var(--primary)) uppercase md:inline-flex">
+                    <span className="hidden items-center gap-1.5 rounded-full bg-[color-mix(in_oklab,var(--sys-600,var(--primary))_12%,white)] px-2.5 py-1 text-[11px] font-bold tracking-wide text-(--sys-600,var(--primary)) uppercase md:inline-flex">
                         {context.icon && (
-                            <context.icon className="size-3.5" aria-hidden />
+                            <context.icon className="size-3" aria-hidden />
                         )}
                         {context.label}
                     </span>
                 )}
 
                 <ChevronDown
-                    className={`size-4 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+                    className={`size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
                     aria-hidden
                 />
             </button>

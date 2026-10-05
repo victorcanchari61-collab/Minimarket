@@ -24,37 +24,37 @@ export default function Sistema({ system: key }: { system: PortalKey }) {
                     style={{ background: 'var(--grad)' }}
                 />
 
-                <main className="mx-auto max-w-[900px] px-6 py-10">
-                    <div className="flex items-center justify-between gap-4">
-                        <Link
-                            href="/sistemas"
-                            className="inline-flex items-center gap-2 rounded-lg text-sm font-medium text-muted-foreground outline-none hover:text-(--text) focus-visible:ring-[3px] focus-visible:ring-(--sys-400)"
-                        >
-                            <ArrowLeft className="size-4" aria-hidden />
-                            {BRAND_NAME}
-                        </Link>
+                <header className="flex items-center justify-between gap-4 px-5 pt-4">
+                    <Link
+                        href="/sistemas"
+                        className="inline-flex items-center gap-2 rounded-lg text-sm font-medium text-muted-foreground outline-none hover:text-(--text) focus-visible:ring-[3px] focus-visible:ring-(--sys-400)"
+                    >
+                        <ArrowLeft className="size-4" aria-hidden />
+                        {BRAND_NAME}
+                    </Link>
 
-                        {user ? (
-                            <div className="flex items-center gap-3">
-                                <UserMenu
-                                    user={user}
-                                    context={{
-                                        label: system.name,
-                                        icon: system.icon,
-                                    }}
-                                    onSignOut={signOut}
-                                />
-                                <NotificationBell />
-                            </div>
-                        ) : (
-                            <div
-                                aria-hidden
-                                className="h-14 w-60 animate-pulse rounded-full bg-white/80"
+                    {user ? (
+                        <div className="flex items-center gap-2.5">
+                            <UserMenu
+                                user={user}
+                                context={{
+                                    label: system.name,
+                                    icon: system.icon,
+                                }}
+                                onSignOut={signOut}
                             />
-                        )}
-                    </div>
+                            <NotificationBell />
+                        </div>
+                    ) : (
+                        <div
+                            aria-hidden
+                            className="h-11 w-56 animate-pulse rounded-full bg-white/80"
+                        />
+                    )}
+                </header>
 
-                    <div className="mt-8 flex items-center gap-4">
+                <main className="mx-auto max-w-[900px] px-6 pt-8 pb-10">
+                    <div className="flex items-center gap-4">
                         <span className="grid size-14 place-items-center rounded-2xl bg-[color-mix(in_oklab,var(--grad-end)_14%,white)] text-(--sys-600)">
                             <system.icon className="size-7" aria-hidden />
                         </span>

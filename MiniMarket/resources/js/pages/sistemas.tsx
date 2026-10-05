@@ -14,7 +14,7 @@ export default function Sistemas() {
             <Head title="Sistemas" />
 
             <div className="min-h-dvh bg-[#f3f4f6] font-display text-[#1a1033]">
-                <header className="mx-auto flex max-w-[1180px] items-center justify-end gap-3 px-6 pt-5">
+                <header className="flex items-center justify-end gap-2.5 px-5 pt-4">
                     {user ? (
                         <>
                             <UserMenu user={user} onSignOut={signOut} />
@@ -23,7 +23,7 @@ export default function Sistemas() {
                     ) : (
                         <div
                             aria-hidden
-                            className="h-14 w-60 animate-pulse rounded-full bg-white/80"
+                            className="h-11 w-56 animate-pulse rounded-full bg-white/80"
                         />
                     )}
                 </header>
