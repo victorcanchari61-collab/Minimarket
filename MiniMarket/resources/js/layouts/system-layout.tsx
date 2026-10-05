@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import NotificationBell from '@/components/notification-bell';
 import SystemSidebar from '@/components/system/system-sidebar';
+import { IconGradientDefs } from '@/components/system/themed-icon';
 import UserMenu from '@/components/user-menu';
 import { useAuthUser } from '@/hooks/use-auth-user';
 import { SYSTEM_NAV } from '@/lib/navigation';
@@ -76,6 +77,8 @@ export default function SystemLayout({
             data-system={system.key}
             className="flex min-h-dvh bg-[#f3f4f6] font-display text-(--text)"
         >
+            <IconGradientDefs />
+
             <aside className="sticky top-0 hidden h-dvh shrink-0 lg:block">
                 <SystemSidebar
                     system={system}
@@ -133,6 +136,7 @@ export default function SystemLayout({
                         <div className="flex shrink-0 items-center gap-2.5">
                             <UserMenu
                                 user={user}
+                                currentKey={system.key}
                                 context={{
                                     label: system.name,
                                     icon: system.icon,

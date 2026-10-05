@@ -131,6 +131,10 @@
     --sys-300: color-mix(in oklab, var(--grad-end) 34%, white);
     --sys-200: color-mix(in oklab, var(--grad-start) 12%, white);
     --sys-50: color-mix(in oklab, var(--surface) 45%, white);
+
+    /* Extremos del degradado de los iconos: oscurecidos para que se lean sobre blanco. */
+    --icon-a: color-mix(in oklab, var(--grad-start), black 12%);
+    --icon-b: color-mix(in oklab, var(--grad-end), black 30%);
 }
 
 .sys-theme {

@@ -1,13 +1,22 @@
-import { ChevronDown, LogOut } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { Check, ChevronDown, House, LogOut } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
+import type { PortalEntry, PortalKey } from '@/lib/systems';
+import { SETTINGS, SYSTEM_LIST } from '@/lib/systems';
+import { cn } from '@/lib/utils';
 
 type UserMenuProps = {
     user: { name: string; email: string };
     /** Etiqueta de contexto junto al nombre (sistema o sucursal activa). */
     context?: { label: string; icon?: LucideIcon };
+    /** Sistema que se está usando; se marca en la lista. */
+    currentKey?: PortalKey;
     onSignOut: () => void;
 };
+
+const ITEM =
+    'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[#1a1033] outline-none hover:bg-black/[0.04] focus-visible:bg-black/[0.04]';
 
 function initialsOf(name: string): string {
     return (
@@ -20,7 +29,12 @@ function initialsOf(name: string): string {
     );
 }
 
-export default function UserMenu({ user, context, onSignOut }: UserMenuProps) {
+export default function UserMenu({
+    user,
+    context,
+    currentKey,
+    onSignOut,
+}: UserMenuProps) {
     const [open, setOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
     const menuId = useId();
@@ -95,7 +109,7 @@ export default function UserMenu({ user, context, onSignOut }: UserMenuProps) {
                 <div
                     id={menuId}
                     role="menu"
-                    className="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white p-1.5 shadow-[0_18px_36px_-16px_rgb(16_24_40/0.35)]"
+                    className="absolute right-0 z-20 mt-2 max-h-[min(32rem,80dvh)] w-72 overflow-y-auto rounded-2xl border border-[#e5e7eb] bg-white p-1.5 shadow-[0_18px_36px_-16px_rgb(16_24_40/0.35)]"
                 >
                     <div className="px-3 py-2.5 sm:hidden">
                         <p className="truncate text-sm font-bold text-[#1a1033]">
@@ -105,17 +119,88 @@ export default function UserMenu({ user, context, onSignOut }: UserMenuProps) {
                             {user.email}
                         </p>
                     </div>
+
+                    <Link
+                        href="/sistemas"
+                        role="menuitem"
+                        onClick={() => setOpen(false)}
+                        className={ITEM}
+                    >
+                        <House
+                            className="size-4 text-muted-foreground"
+                            aria-hidden
+                        />
+                        Inicio
+                    </Link>
+
+                    <p className="px-3 pt-3 pb-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+                        Sistemas
+                    </p>
+                    {SYSTEM_LIST.map((entry) => (
+                        <SystemLink
+                            key={entry.key}
+                            entry={entry}
+                            current={entry.key === currentKey}
+                            onNavigate={() => setOpen(false)}
+                        />
+                    ))}
+
+                    <div className="my-1.5 border-t border-[#e5e7eb]" />
+                    <SystemLink
+                        entry={SETTINGS}
+                        current={SETTINGS.key === currentKey}
+                        onNavigate={() => setOpen(false)}
+                    />
+
+                    <div className="my-1.5 border-t border-[#e5e7eb]" />
                     <button
                         type="button"
                         role="menuitem"
                         onClick={onSignOut}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[#1a1033] outline-none hover:bg-black/[0.04] focus-visible:bg-black/[0.04]"
+                        className={ITEM}
                     >
-                        <LogOut className="size-4" aria-hidden />
+                        <LogOut
+                            className="size-4 text-muted-foreground"
+                            aria-hidden
+                        />
                         Cerrar sesión
                     </button>
                 </div>
             )}
         </div>
+    );
+}
+
+function SystemLink({
+    entry,
+    current,
+    onNavigate,
+}: {
+    entry: PortalEntry;
+    current: boolean;
+    onNavigate: () => void;
+}) {
+    return (
+        <Link
+            href={`/sistemas/${entry.key}`}
+            role="menuitem"
+            data-system={entry.key}
+            aria-current={current ? 'page' : undefined}
+            onClick={onNavigate}
+            className={cn(
+                ITEM,
+                current &&
+                    'bg-[color-mix(in_oklab,var(--grad-start)_10%,white)] font-semibold',
+            )}
+        >
+            <entry.icon className="size-4 text-(--sys-600)" aria-hidden />
+            <span className="min-w-0 flex-1 truncate">{entry.name}</span>
+            {current && (
+                <Check
+                    className="size-4 shrink-0 text-(--sys-600)"
+                    aria-hidden
+                />
+            )}
+        </Link>
     );
 }

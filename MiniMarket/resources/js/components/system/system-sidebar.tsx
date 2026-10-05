@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import type { NavModule } from '@/lib/navigation';
 import { slugify } from '@/lib/navigation';
 import type { PortalEntry } from '@/lib/systems';
+import ThemedIcon from '@/components/system/themed-icon';
 import { cn } from '@/lib/utils';
 
 type SystemSidebarProps = {
@@ -23,7 +24,6 @@ type SystemSidebarProps = {
     onClose?: () => void;
 };
 
-const TINT = 'bg-[color-mix(in_oklab,var(--grad-end)_14%,white)]';
 const ACTIVE_BG = 'bg-[color-mix(in_oklab,var(--grad-start)_10%,white)]';
 
 export default function SystemSidebar({
@@ -71,8 +71,8 @@ export default function SystemSidebar({
         <nav
             aria-label={`Menú de ${system.name}`}
             className={cn(
-                'flex h-full flex-col overflow-y-auto border-r border-[color-mix(in_oklab,var(--grad-start)_10%,#e5e7eb)] bg-white transition-[width] duration-200 ease-out',
-                collapsed ? 'w-[4.5rem]' : 'w-[17rem]',
+                'flex h-full flex-col border-r border-[color-mix(in_oklab,var(--grad-start)_10%,#e5e7eb)] bg-white transition-[width] duration-200 ease-out',
+                collapsed ? 'w-[4rem]' : 'w-[15.5rem]',
             )}
         >
             <div
@@ -98,31 +98,15 @@ export default function SystemSidebar({
                     </span>
                     {!collapsed && (
                         <span className="min-w-0">
-                            <span className="block truncate text-base leading-tight font-bold text-(--text)">
+                            <span className="block truncate text-[15px] leading-tight font-bold text-(--text)">
                                 {system.name}
                             </span>
-                            <span className="block truncate text-xs text-muted-foreground">
+                            <span className="block truncate text-[11px] text-muted-foreground">
                                 {system.fullName}
                             </span>
                         </span>
                     )}
                 </Link>
-
-                <button
-                    type="button"
-                    onClick={onToggleCollapsed}
-                    aria-label={
-                        collapsed ? 'Expandir el menú' : 'Contraer el menú'
-                    }
-                    aria-expanded={!collapsed}
-                    className="hidden size-8 shrink-0 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-black/[0.05] hover:text-(--text) focus-visible:ring-[3px] focus-visible:ring-(--sys-400) lg:grid"
-                >
-                    {collapsed ? (
-                        <PanelLeftOpen className="size-[18px]" aria-hidden />
-                    ) : (
-                        <PanelLeftClose className="size-[18px]" aria-hidden />
-                    )}
-                </button>
 
                 {onClose && (
                     <button
@@ -136,7 +120,7 @@ export default function SystemSidebar({
                 )}
             </div>
 
-            <ul className="flex flex-col gap-0.5 px-2 pb-6">
+            <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 pb-4">
                 <li>
                     <Link
                         href={base}
@@ -144,18 +128,13 @@ export default function SystemSidebar({
                         onClick={onClose}
                         aria-current={atHome ? 'page' : undefined}
                         className={cn(
-                            'flex items-center gap-3 rounded-xl px-2 py-2 text-[14px] font-semibold text-(--text) outline-none hover:bg-black/[0.04] focus-visible:ring-[3px] focus-visible:ring-(--sys-400)',
+                            'flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-[13px] font-semibold text-(--text) outline-none hover:bg-black/[0.04] focus-visible:ring-[3px] focus-visible:ring-(--sys-400)',
                             atHome && ACTIVE_BG,
                             collapsed && 'justify-center',
                         )}
                     >
-                        <span
-                            className={cn(
-                                'grid size-8 shrink-0 place-items-center rounded-lg text-(--sys-600)',
-                                TINT,
-                            )}
-                        >
-                            <House className="size-[18px]" aria-hidden />
+                        <span className="grid size-7 shrink-0 place-items-center">
+                            <ThemedIcon icon={House} className="size-[18px]" />
                         </span>
                         {!collapsed && 'Inicio'}
                     </Link>
@@ -176,21 +155,16 @@ export default function SystemSidebar({
                                 aria-expanded={isOpen}
                                 aria-controls={panelId}
                                 className={cn(
-                                    'flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left text-[14px] font-semibold text-(--text) outline-none hover:bg-black/[0.04] focus-visible:ring-[3px] focus-visible:ring-(--sys-400)',
+                                    'flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-[13px] font-semibold text-(--text) outline-none hover:bg-black/[0.04] focus-visible:ring-[3px] focus-visible:ring-(--sys-400)',
                                     (isOpen || (collapsed && isActiveModule)) &&
                                         'bg-(--surface)',
                                     collapsed && 'justify-center',
                                 )}
                             >
-                                <span
-                                    className={cn(
-                                        'grid size-8 shrink-0 place-items-center rounded-lg text-(--sys-600)',
-                                        TINT,
-                                    )}
-                                >
-                                    <entry.icon
+                                <span className="grid size-7 shrink-0 place-items-center">
+                                    <ThemedIcon
+                                        icon={entry.icon}
                                         className="size-[18px]"
-                                        aria-hidden
                                     />
                                 </span>
                                 {!collapsed && (
@@ -200,7 +174,7 @@ export default function SystemSidebar({
                                         </span>
                                         <ChevronDown
                                             className={cn(
-                                                'size-4 shrink-0 text-muted-foreground transition-transform duration-200',
+                                                'size-3.5 shrink-0 text-muted-foreground transition-transform duration-200',
                                                 isOpen && 'rotate-180',
                                             )}
                                             aria-hidden
@@ -242,7 +216,7 @@ export default function SystemSidebar({
                                                                 : undefined
                                                         }
                                                         className={cn(
-                                                            'flex items-center gap-3 rounded-xl py-2 pr-2 pl-[1.1rem] text-[13.5px] text-(--text) outline-none hover:bg-black/[0.04] focus-visible:ring-[3px] focus-visible:ring-(--sys-400)',
+                                                            'flex items-center gap-2.5 rounded-xl py-1.5 pr-2 pl-[1rem] text-[12.5px] text-(--text) outline-none hover:bg-black/[0.04] focus-visible:ring-[3px] focus-visible:ring-(--sys-400)',
                                                             isActive
                                                                 ? cn(
                                                                       ACTIVE_BG,
@@ -251,9 +225,9 @@ export default function SystemSidebar({
                                                                 : 'font-medium',
                                                         )}
                                                     >
-                                                        <subItem.icon
-                                                            className="size-4 shrink-0 text-(--sys-600)"
-                                                            aria-hidden
+                                                        <ThemedIcon
+                                                            icon={subItem.icon}
+                                                            className="size-4 shrink-0"
                                                         />
                                                         <span className="min-w-0 leading-snug">
                                                             {subItem.label}
@@ -269,6 +243,37 @@ export default function SystemSidebar({
                     );
                 })}
             </ul>
+
+            <div className="hidden border-t border-[color-mix(in_oklab,var(--grad-start)_10%,#e5e7eb)] p-2 lg:block">
+                <button
+                    type="button"
+                    onClick={onToggleCollapsed}
+                    aria-label={
+                        collapsed ? 'Expandir el menú' : 'Contraer el menú'
+                    }
+                    aria-expanded={!collapsed}
+                    title={collapsed ? 'Expandir el menú' : undefined}
+                    className={cn(
+                        'flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-[12.5px] font-medium text-muted-foreground outline-none hover:bg-black/[0.04] hover:text-(--text) focus-visible:ring-[3px] focus-visible:ring-(--sys-400)',
+                        collapsed && 'justify-center',
+                    )}
+                >
+                    <span className="grid size-7 shrink-0 place-items-center">
+                        {collapsed ? (
+                            <PanelLeftOpen
+                                className="size-[18px]"
+                                aria-hidden
+                            />
+                        ) : (
+                            <PanelLeftClose
+                                className="size-[18px]"
+                                aria-hidden
+                            />
+                        )}
+                    </span>
+                    {!collapsed && 'Contraer menú'}
+                </button>
+            </div>
         </nav>
     );
 }
