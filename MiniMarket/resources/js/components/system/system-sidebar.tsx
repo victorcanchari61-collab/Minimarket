@@ -198,7 +198,7 @@ export default function SystemSidebar({
                                     )}
                                 >
                                     <ul
-                                        className="-mx-2 flex flex-col gap-0.5 overflow-hidden px-2"
+                                        className="relative -mx-2 flex flex-col gap-0.5 overflow-hidden pr-2 pl-8 before:absolute before:top-1 before:bottom-1 before:left-[22px] before:w-px before:bg-[#dfe3e8] before:content-['']"
                                         inert={!isOpen}
                                     >
                                         {entry.items.map((subItem) => {
@@ -220,11 +220,11 @@ export default function SystemSidebar({
                                                                 : undefined
                                                         }
                                                         className={cn(
-                                                            'flex items-center gap-2.5 rounded-xl py-1.5 pr-2 pl-[1rem] text-[12.5px] outline-none hover:bg-black/[0.04] focus-visible:ring-[3px] focus-visible:ring-(--sys-400)',
+                                                            'flex items-center gap-2.5 rounded-xl py-1.5 pr-2 pl-2.5 text-[12.5px] outline-none hover:bg-black/[0.04] focus-visible:ring-[3px] focus-visible:ring-(--sys-400)',
                                                             isActive
                                                                 ? cn(
                                                                       ACTIVE_ROW,
-                                                                      'font-semibold',
+                                                                      'font-semibold before:-left-8',
                                                                   )
                                                                 : 'font-medium text-(--text)',
                                                         )}
