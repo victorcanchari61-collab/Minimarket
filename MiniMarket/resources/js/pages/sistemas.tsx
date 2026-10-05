@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { ApiUser } from '@/lib/api';
 import { ApiError, clearToken, fetchUser, getToken, logout } from '@/lib/api';
-import { BRAND_NAME, SYSTEM_LIST } from '@/lib/systems';
+import { BRAND_NAME, PORTAL_ENTRIES, SYSTEM_LIST } from '@/lib/systems';
 
 export default function Sistemas() {
     const [user, setUser] = useState<ApiUser | null>(null);
@@ -70,7 +70,7 @@ export default function Sistemas() {
                     </p>
 
                     <ul className="mt-10 flex w-full flex-wrap justify-center gap-4">
-                        {SYSTEM_LIST.map((system, index) => (
+                        {PORTAL_ENTRIES.map((system, index) => (
                             <li
                                 key={system.key}
                                 className="sys-rise w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)]"

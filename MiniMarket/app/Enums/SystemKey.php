@@ -11,4 +11,5 @@ enum SystemKey: string
     case Hcm = 'hcm';
     case Crm = 'crm';
     case Bi = 'bi';
+    case Config = 'config';
 }

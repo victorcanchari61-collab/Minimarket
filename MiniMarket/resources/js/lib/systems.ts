@@ -1,4 +1,5 @@
 import {
+    Settings,
     Banknote,
     Boxes,
     Building2,
@@ -41,14 +42,21 @@ export type ShowcaseRow = {
     tone: StatusTone;
 };
 
-export type SystemDefinition = {
-    key: SystemKey;
+/** Entradas de la pantalla de sistemas: los sistemas de negocio y Configuraciones. */
+export type PortalKey = SystemKey | 'config';
+
+export type PortalEntry = {
+    key: PortalKey;
     name: string;
     fullName: string;
     icon: LucideIcon;
+    modules: string[];
+};
+
+export type SystemDefinition = PortalEntry & {
+    key: SystemKey;
     headline: string;
     blurb: string;
-    modules: string[];
     rows: [ShowcaseRow, ShowcaseRow, ShowcaseRow];
     footer: string;
 };
@@ -378,3 +386,25 @@ export function resolveSystem(search = ''): SystemDefinition {
 export const LOGIN_SYSTEM_LIST: SystemDefinition[] = SYSTEM_LIST.filter(
     (system) => system.key !== 'bi',
 );
+
+/** Configuraciones no es un sistema de negocio: no entra en el conteo ni en el login. */
+export const SETTINGS: PortalEntry = {
+    key: 'config',
+    name: 'Configuraciones',
+    fullName: 'Usuarios, accesos y parámetros',
+    icon: Settings,
+    modules: [
+        'Usuarios',
+        'Roles y permisos',
+        'Empresa y sucursales',
+        'Terminales y series',
+        'Auditoría',
+        'Integraciones',
+    ],
+};
+
+export const PORTAL_ENTRIES: PortalEntry[] = [...SYSTEM_LIST, SETTINGS];
+
+export function findPortalEntry(key: PortalKey): PortalEntry {
+    return PORTAL_ENTRIES.find((entry) => entry.key === key) ?? SETTINGS;
+}

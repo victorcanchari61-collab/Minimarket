@@ -2,11 +2,11 @@ import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useEffect } from 'react';
 import { getToken } from '@/lib/api';
-import { BRAND_NAME, SYSTEMS } from '@/lib/systems';
-import type { SystemKey } from '@/lib/systems';
+import { BRAND_NAME, findPortalEntry } from '@/lib/systems';
+import type { PortalKey } from '@/lib/systems';
 
-export default function Sistema({ system: key }: { system: SystemKey }) {
-    const system = SYSTEMS[key];
+export default function Sistema({ system: key }: { system: PortalKey }) {
+    const system = findPortalEntry(key);
 
     useEffect(() => {
         if (!getToken()) {
@@ -52,7 +52,8 @@ export default function Sistema({ system: key }: { system: SystemKey }) {
                     </div>
 
                     <p className="mt-8 rounded-2xl border border-dashed border-[color-mix(in_oklab,var(--grad-start)_35%,#e5e7eb)] bg-white px-5 py-4 text-[15px] text-muted-foreground">
-                        Este sistema todavía está en construcción. Estos son sus{' '}
+                        {key === 'config' ? 'Esta sección' : 'Este sistema'}{' '}
+                        todavía está en construcción. Estos son sus{' '}
                         {system.modules.length} módulos:
                     </p>
 

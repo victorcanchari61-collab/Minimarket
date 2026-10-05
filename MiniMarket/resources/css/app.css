@@ -102,6 +102,14 @@
     --text: #1a1033;
 }
 
+[data-system='config'] {
+    --grad-start: #334155;
+    --grad-end: #94a3b8;
+    --accent: #f59e0b;
+    --surface: #f1f5f9;
+    --text: #0f172a;
+}
+
 [data-system] {
     --grad: linear-gradient(90deg, var(--grad-start), var(--grad-end));
 
