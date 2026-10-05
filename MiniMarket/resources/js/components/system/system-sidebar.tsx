@@ -24,7 +24,12 @@ type SystemSidebarProps = {
     onClose?: () => void;
 };
 
-const ACTIVE_BG = 'bg-[color-mix(in_oklab,var(--grad-start)_10%,white)]';
+/**
+ * Opción activa: fondo suave del tema, texto en el color del sistema y una
+ * barra vertical con el degradado pegada al borde izquierdo del menú.
+ */
+const ACTIVE_ROW =
+    "relative bg-[color-mix(in_oklab,var(--grad-start)_9%,white)] text-(--sys-600) before:absolute before:top-1/2 before:-left-2 before:h-6 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-[linear-gradient(180deg,var(--grad-start),var(--grad-end))] before:content-['']";
 
 export default function SystemSidebar({
     system,
@@ -129,7 +134,7 @@ export default function SystemSidebar({
                         aria-current={atHome ? 'page' : undefined}
                         className={cn(
                             'flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-[13px] font-semibold text-(--text) outline-none hover:bg-black/[0.04] focus-visible:ring-[3px] focus-visible:ring-(--sys-400)',
-                            atHome && ACTIVE_BG,
+                            atHome && ACTIVE_ROW,
                             collapsed && 'justify-center',
                         )}
                     >
@@ -156,8 +161,7 @@ export default function SystemSidebar({
                                 aria-controls={panelId}
                                 className={cn(
                                     'flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-[13px] font-semibold text-(--text) outline-none hover:bg-black/[0.04] focus-visible:ring-[3px] focus-visible:ring-(--sys-400)',
-                                    (isOpen || (collapsed && isActiveModule)) &&
-                                        'bg-(--surface)',
+                                    collapsed && isActiveModule && ACTIVE_ROW,
                                     collapsed && 'justify-center',
                                 )}
                             >
@@ -194,7 +198,7 @@ export default function SystemSidebar({
                                     )}
                                 >
                                     <ul
-                                        className="flex flex-col gap-0.5 overflow-hidden"
+                                        className="-mx-2 flex flex-col gap-0.5 overflow-hidden px-2"
                                         inert={!isOpen}
                                     >
                                         {entry.items.map((subItem) => {
@@ -216,13 +220,13 @@ export default function SystemSidebar({
                                                                 : undefined
                                                         }
                                                         className={cn(
-                                                            'flex items-center gap-2.5 rounded-xl py-1.5 pr-2 pl-[1rem] text-[12.5px] text-(--text) outline-none hover:bg-black/[0.04] focus-visible:ring-[3px] focus-visible:ring-(--sys-400)',
+                                                            'flex items-center gap-2.5 rounded-xl py-1.5 pr-2 pl-[1rem] text-[12.5px] outline-none hover:bg-black/[0.04] focus-visible:ring-[3px] focus-visible:ring-(--sys-400)',
                                                             isActive
                                                                 ? cn(
-                                                                      ACTIVE_BG,
+                                                                      ACTIVE_ROW,
                                                                       'font-semibold',
                                                                   )
-                                                                : 'font-medium',
+                                                                : 'font-medium text-(--text)',
                                                         )}
                                                     >
                                                         <ThemedIcon
