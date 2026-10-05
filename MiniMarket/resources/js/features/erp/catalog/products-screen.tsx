@@ -34,13 +34,13 @@ const STATUS_OPTIONS = [
 ];
 
 const COLUMNS: DataTableColumn<Product>[] = [
-    { key: 'sku', label: 'SKU', sortable: true, searchable: true, width: 130 },
+    { key: 'sku', label: 'SKU', sortable: true, searchable: true, width: 120 },
     {
         key: 'name',
         label: 'Producto',
         sortable: true,
         searchable: true,
-        width: 280,
+        width: 240,
         render: (product) => (
             <span className="font-medium text-ink">{product.name}</span>
         ),
@@ -54,15 +54,15 @@ const COLUMNS: DataTableColumn<Product>[] = [
             value: category,
             label: category,
         })),
-        width: 150,
+        width: 130,
     },
-    { key: 'unit', label: 'Unidad', width: 110 },
+    { key: 'unit', label: 'Unidad', width: 100 },
     {
         key: 'stock',
         label: 'Stock',
         align: 'right',
         sortable: true,
-        width: 110,
+        width: 90,
         render: (product) => (
             <span
                 className={
@@ -78,7 +78,7 @@ const COLUMNS: DataTableColumn<Product>[] = [
         label: 'Precio',
         align: 'right',
         sortable: true,
-        width: 120,
+        width: 110,
         render: (product) => formatMoney(product.price),
     },
     {
@@ -87,7 +87,7 @@ const COLUMNS: DataTableColumn<Product>[] = [
         sortable: true,
         filterType: 'select',
         filterOptions: STATUS_OPTIONS,
-        width: 120,
+        width: 110,
         render: (product) => (
             <Badge tone={product.status === 'active' ? 'success' : 'neutral'}>
                 {product.status === 'active' ? 'Activo' : 'Inactivo'}
