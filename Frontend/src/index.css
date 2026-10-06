@@ -1,0 +1,349 @@
+@import 'tailwindcss';
+
+@theme {
+    --font-sans:
+        'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Noto Color Emoji';
+    --font-display:
+        'Plus Jakarta Sans Variable', 'Instrument Sans Variable', ui-sans-serif, system-ui,
+        sans-serif;
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-destructive: var(--destructive);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+}
+
+:root {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.2 0.02 260);
+    --card: oklch(1 0 0);
+    --primary: oklch(0.52 0.19 262);
+    --primary-foreground: oklch(0.99 0 0);
+    --muted-foreground: oklch(0.5 0.02 260);
+    --destructive: oklch(0.55 0.22 27);
+    --border: oklch(0.92 0.01 260);
+    --input: oklch(0.9 0.01 260);
+    --ring: oklch(0.72 0.14 262);
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+/*
+ * Tema por sistema. Cada sistema define su paleta (degradado, acento,
+ * superficie y texto) y de ahí salen el resto de tonos. Cualquier contenedor
+ * con data-system="..." toma los colores de ese sistema; con .sys-theme además
+ * redefine --primary y --ring para que los controles usen su color.
+ */
+[data-system='pos'] {
+    --grad-start: #ff512f;
+    --grad-end: #dd2476;
+    --accent: #ffc371;
+    --surface: #fff5f2;
+    --text: #2b0e1a;
+}
+[data-system='erp'] {
+    --grad-start: #4f46e5;
+    --grad-end: #9333ea;
+    --accent: #f59e0b;
+    --surface: #f5f5ff;
+    --text: #1e1b4b;
+}
+[data-system='scm'] {
+    --grad-start: #0072ff;
+    --grad-end: #00c6ff;
+    --accent: #ff7a18;
+    --surface: #f0f7ff;
+    --text: #0b1f3a;
+}
+[data-system='wms'] {
+    --grad-start: #f83600;
+    --grad-end: #f9d423;
+    --accent: #2d1b69;
+    --surface: #fff9ec;
+    --text: #1f1300;
+}
+[data-system='hcm'] {
+    --grad-start: #ff0844;
+    --grad-end: #ffb199;
+    --accent: #5b2a86;
+    --surface: #fff1f3;
+    --text: #2a0a14;
+}
+[data-system='crm'] {
+    --grad-start: #11998e;
+    --grad-end: #38ef7d;
+    --accent: #ff6b35;
+    --surface: #f0faf6;
+    --text: #0a2e26;
+}
+[data-system='bi'] {
+    --grad-start: #ee3224;
+    --grad-end: #6a0dc4;
+    --accent: #ffb020;
+    --surface: #f6f3fb;
+    --text: #1a1033;
+}
+
+[data-system='config'] {
+    --grad-start: #334155;
+    --grad-end: #94a3b8;
+    --accent: #f59e0b;
+    --surface: #f1f5f9;
+    --text: #0f172a;
+}
+
+[data-system] {
+    --grad: linear-gradient(90deg, var(--grad-start), var(--grad-end));
+
+    --sys-950: color-mix(
+        in oklab,
+        color-mix(in oklab, var(--grad-start) 90%, var(--grad-end)),
+        black 84%
+    );
+    --sys-900: color-mix(
+        in oklab,
+        color-mix(in oklab, var(--grad-start) 80%, var(--grad-end)),
+        black 74%
+    );
+    --sys-800: color-mix(in oklab, var(--grad-start), black 64%);
+    --sys-700: color-mix(in oklab, var(--grad-start), black 46%);
+    --sys-600: color-mix(in oklab, var(--grad-start), black 24%);
+    --sys-500: color-mix(in oklab, var(--grad-start), black 8%);
+    --sys-400: color-mix(in oklab, var(--grad-start) 70%, white);
+    --sys-300: color-mix(in oklab, var(--grad-end) 34%, white);
+    --sys-200: color-mix(in oklab, var(--grad-start) 12%, white);
+    --sys-50: color-mix(in oklab, var(--surface) 45%, white);
+
+    /* Extremos del degradado de los iconos: oscurecidos para que se lean sobre blanco. */
+    --icon-a: color-mix(in oklab, var(--grad-start), black 12%);
+    --icon-b: color-mix(in oklab, var(--grad-end), black 30%);
+}
+
+.sys-theme {
+    --primary: var(--sys-600);
+    --primary-foreground: oklch(0.99 0 0);
+    --ring: var(--sys-400);
+    --input: color-mix(in oklab, var(--grad-start) 14%, #e5e7eb);
+    --border: color-mix(in oklab, var(--grad-start) 8%, #e5e7eb);
+
+    /* Los --color-* de @theme se resuelven en :root; hay que reasignarlos aquí. */
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+}
+
+.sys-panel {
+    background:
+        radial-gradient(
+            70% 45% at 100% 0%,
+            color-mix(in oklab, var(--grad-end) 26%, transparent) 0%,
+            transparent 70%
+        ),
+        radial-gradient(
+            85% 55% at 8% 108%,
+            color-mix(in oklch, var(--sys-600) 80%, transparent) 0%,
+            transparent 70%
+        ),
+        linear-gradient(165deg, var(--sys-900) 0%, var(--sys-950) 100%);
+}
+
+/* Trama de granos inclinados, como en la referencia, apagada hacia abajo. */
+.sys-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72' fill='none' stroke='white' stroke-width='1.4' stroke-linecap='round'%3E%3Cg transform='rotate(-38 18 18)'%3E%3Cellipse cx='18' cy='18' rx='11' ry='5.5'/%3E%3Cpath d='M10 18h16'/%3E%3C/g%3E%3Cg transform='rotate(-38 54 54)'%3E%3Cellipse cx='54' cy='54' rx='11' ry='5.5'/%3E%3Cpath d='M46 54h16'/%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.075;
+    mask-image: linear-gradient(180deg, #000 0%, #000 45%, transparent 95%);
+    pointer-events: none;
+}
+
+@keyframes sys-rise {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+        filter: blur(4px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+        filter: none;
+    }
+}
+
+@keyframes sys-fill {
+    from {
+        transform: scaleX(0);
+    }
+    to {
+        transform: scaleX(1);
+    }
+}
+
+.sys-rise {
+    animation: sys-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: var(--sys-delay, 0ms);
+}
+
+.sys-fill {
+    transform-origin: left;
+    animation: sys-fill var(--sys-duration, 6s) linear both;
+}
+
+.sys-fill[data-paused='true'] {
+    animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sys-rise {
+        animation: none;
+    }
+}
+
+.sys-theme ::selection {
+    background: var(--sys-500);
+    color: oklch(0.99 0 0);
+}
+
+/*
+ * Base de los componentes reutilizables (components/ui y components/data).
+ * Medidas, tonos y el acento del sistema viven aquí; los componentes solo
+ * los consumen, así que cambiar un valor lo cambia en todas las pantallas.
+ */
+@theme {
+    --radius-field: 6px;
+    --radius-panel: 20px;
+    --shadow-panel: 0 18px 45px -18px rgb(15 23 42 / 0.25);
+
+    /* Altura de TODOS los controles: sm tablas y barras · md formularios · lg login. */
+    --height-field-sm: 2.25rem;
+    --height-field-md: 2.5rem;
+    --height-field-lg: 3rem;
+}
+
+/* inline: el valor se resuelve en el elemento, así que respeta data-system. */
+@theme inline {
+    --color-surface: var(--surface);
+    --color-surface-alt: var(--surface-alt);
+    --color-ink: var(--ink);
+    --color-ink-muted: var(--ink-muted);
+    --color-ink-soft: var(--ink-soft);
+    --color-line: var(--line);
+    --color-line-strong: var(--line-strong);
+    --color-success: var(--success);
+    --color-warning: var(--warning);
+    --color-danger: var(--danger);
+    --color-info: var(--info);
+    --color-accent: var(--accent);
+    --color-accent-hover: var(--accent-hover);
+    --color-accent-ink: var(--accent-ink);
+    --color-accent-soft: var(--accent-soft);
+    --color-accent-ring: var(--accent-ring);
+}
+
+:root {
+    --surface: #ffffff;
+    --surface-alt: #f9fafb;
+    --ink: oklch(0.2 0.02 260);
+    --ink-muted: #6b7280;
+    --ink-soft: #9ca3af;
+    --line: #e5e7eb;
+    --line-strong: #d1d5db;
+
+    --success: #16a34a;
+    --warning: #f59e0b;
+    --danger: #dc2626;
+    --info: #2563eb;
+
+    /* Acento por defecto; dentro de data-system lo reemplaza el del sistema. */
+    --accent: oklch(0.52 0.19 262);
+    --accent-hover: oklch(0.45 0.19 262);
+    --accent-ink: oklch(0.42 0.18 262);
+    --accent-soft: color-mix(in oklab, var(--accent) 10%, white);
+    --accent-ring: color-mix(in oklab, var(--accent) 25%, transparent);
+}
+
+[data-system] {
+    --accent: var(--sys-600);
+    --accent-hover: var(--sys-700);
+    --accent-ink: var(--sys-700);
+    --accent-soft: color-mix(in oklab, var(--sys-600) 10%, white);
+    --accent-ring: color-mix(in oklab, var(--sys-600) 25%, transparent);
+}
+
+/* Tonos para insignias, indicadores y avisos: un color base y tres derivados. */
+.tone-neutral {
+    --tone-solid: var(--ink-muted);
+    --tone-bg: #f3f4f6;
+    --tone-fg: #4b5563;
+    --tone-line: #e5e7eb;
+}
+.tone-accent {
+    --tone-solid: var(--accent);
+    --tone-bg: var(--accent-soft);
+    --tone-fg: var(--accent-ink);
+    --tone-line: color-mix(in oklab, var(--accent) 28%, white);
+}
+.tone-success {
+    --tone-solid: var(--success);
+    --tone-bg: color-mix(in oklab, var(--success) 10%, white);
+    --tone-fg: color-mix(in oklab, var(--success), black 28%);
+    --tone-line: color-mix(in oklab, var(--success) 30%, white);
+}
+.tone-warning {
+    --tone-solid: var(--warning);
+    --tone-bg: color-mix(in oklab, var(--warning) 12%, white);
+    --tone-fg: color-mix(in oklab, var(--warning), black 45%);
+    --tone-line: color-mix(in oklab, var(--warning) 35%, white);
+}
+.tone-danger {
+    --tone-solid: var(--danger);
+    --tone-bg: color-mix(in oklab, var(--danger) 8%, white);
+    --tone-fg: color-mix(in oklab, var(--danger), black 22%);
+    --tone-line: color-mix(in oklab, var(--danger) 30%, white);
+}
+.tone-info {
+    --tone-solid: var(--info);
+    --tone-bg: color-mix(in oklab, var(--info) 8%, white);
+    --tone-fg: color-mix(in oklab, var(--info), black 22%);
+    --tone-line: color-mix(in oklab, var(--info) 30%, white);
+}
+
+@utility ui-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+@utility ui-surface {
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+}
+
+/* Barras de desplazamiento ocultas en filas que se deslizan (móvil). */
+@utility no-scrollbar {
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
