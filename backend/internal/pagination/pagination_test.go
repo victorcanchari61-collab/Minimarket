@@ -3,7 +3,7 @@ package pagination_test
 import (
 	"testing"
 
-	"minimarket/backend/internal/shared/pagination"
+	"minimarket/backend/internal/pagination"
 )
 
 type row struct{ ID int }

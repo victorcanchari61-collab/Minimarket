@@ -1,4 +1,4 @@
-package httpx
+package web
 
 import (
 	"errors"
@@ -9,20 +9,22 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 
-	"minimarket/backend/internal/shared/apperror"
+	"minimarket/backend/internal/apperror"
 )
 
 func init() {
-	// Los errores de validación se nombran con el campo del JSON ("email"), no
-	// con el de Go ("Email").
+	// Los errores de validación se nombran con el campo del JSON o del query
+	// ("email", "category_id"), no con el de Go ("Email").
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterTagNameFunc(func(field reflect.StructField) string {
-			name := strings.SplitN(field.Tag.Get("json"), ",", 2)[0]
-			if name == "-" {
-				return ""
+			for _, tag := range []string{"json", "form"} {
+				name := strings.SplitN(field.Tag.Get(tag), ",", 2)[0]
+				if name != "" && name != "-" {
+					return name
+				}
 			}
 
-			return name
+			return ""
 		})
 	}
 }
@@ -30,7 +32,15 @@ func init() {
 // Bind lee el cuerpo JSON y lo valida con las etiquetas `binding`. Si algo falla
 // registra un error de validación y devuelve false: el handler solo regresa.
 func Bind(c *gin.Context, target any) bool {
-	err := c.ShouldBindJSON(target)
+	return report(c, c.ShouldBindJSON(target), "El cuerpo de la petición no es un JSON válido.")
+}
+
+// BindQuery hace lo mismo con los parámetros de la URL (etiquetas `form`).
+func BindQuery(c *gin.Context, target any) bool {
+	return report(c, c.ShouldBindQuery(target), "Los parámetros de la URL no son válidos.")
+}
+
+func report(c *gin.Context, err error, fallback string) bool {
 	if err == nil {
 		return true
 	}
@@ -43,7 +53,7 @@ func Bind(c *gin.Context, target any) bool {
 			fields[fieldErr.Field()] = append(fields[fieldErr.Field()], messageFor(fieldErr))
 		}
 	} else {
-		fields["body"] = []string{"El cuerpo de la petición no es un JSON válido."}
+		fields["body"] = []string{fallback}
 	}
 
 	_ = c.Error(apperror.ValidationFields(fields))
@@ -61,6 +71,10 @@ func messageFor(err validator.FieldError) string {
 		return "Es demasiado largo (máximo " + err.Param() + " caracteres)."
 	case "min":
 		return "Es demasiado corto (mínimo " + err.Param() + " caracteres)."
+	case "gt":
+		return "Debe ser mayor que " + err.Param() + "."
+	case "oneof":
+		return "Debe ser uno de: " + strings.ReplaceAll(err.Param(), " ", ", ") + "."
 	default:
 		return "El valor no es válido."
 	}

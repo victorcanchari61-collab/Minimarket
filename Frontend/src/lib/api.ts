@@ -19,15 +19,19 @@ export type LoginResponse = {
 export class ApiError extends Error {
     status: number;
     errors: Record<string, string[]>;
+    /** Código estable del backend (INSUFFICIENT_STOCK…): se decide por él, no por el texto. */
+    code: string | undefined;
 
     constructor(
         message: string,
         status: number,
         errors: Record<string, string[]> = {},
+        code?: string,
     ) {
         super(message);
         this.status = status;
         this.errors = errors;
+        this.code = code;
     }
 }
 
@@ -77,6 +81,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
             data.message ?? 'No se pudo completar la solicitud.',
             response.status,
             data.errors,
+            data.code,
         );
     }
 
@@ -129,4 +134,58 @@ export async function fetchDemoCredentials(): Promise<DemoCredentials | null> {
     } catch {
         return null;
     }
+}
+
+type Params = Record<string, string | number | undefined>;
+
+function withQuery(path: string, params: Params = {}): string {
+    const query = new URLSearchParams();
+
+    for (const [key, value] of Object.entries(params)) {
+        if (value !== undefined && value !== '') {
+            query.set(key, String(value));
+        }
+    }
+
+    const text = query.toString();
+
+    return text ? `${path}?${text}` : path;
+}
+
+/** Una página de un listado: las filas y el cursor de la siguiente (null = no hay más). */
+export type Page<T> = { data: T[]; nextCursor: string | null };
+
+export async function getPage<T>(path: string, params?: Params): Promise<Page<T>> {
+    const body = await request<{
+        data: T[];
+        meta: { next_cursor: string | null };
+    }>(withQuery(path, params));
+
+    return { data: body.data, nextCursor: body.meta.next_cursor };
+}
+
+export async function apiGet<T>(path: string, params?: Params): Promise<T> {
+    return (await request<{ data: T }>(withQuery(path, params))).data;
+}
+
+export async function apiPost<T>(path: string, body: unknown): Promise<T> {
+    return (
+        await request<{ data: T }>(path, {
+            method: 'POST',
+            body: JSON.stringify(body),
+        })
+    ).data;
+}
+
+export async function apiPut<T>(path: string, body: unknown): Promise<T> {
+    return (
+        await request<{ data: T }>(path, {
+            method: 'PUT',
+            body: JSON.stringify(body),
+        })
+    ).data;
+}
+
+export async function apiDelete(path: string): Promise<void> {
+    await request(path, { method: 'DELETE' });
 }

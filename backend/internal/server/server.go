@@ -11,9 +11,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"minimarket/backend/internal/config"
-	"minimarket/backend/internal/modules/auth"
-	"minimarket/backend/internal/shared/httpx"
+	"minimarket/backend/internal/auth"
+	"minimarket/backend/internal/erp/catalog"
+	"minimarket/backend/internal/platform/config"
+	"minimarket/backend/internal/web"
 )
 
 func New(cfg config.Config, pool *pgxpool.Pool) *gin.Engine {
@@ -24,7 +25,7 @@ func New(cfg config.Config, pool *pgxpool.Pool) *gin.Engine {
 	}
 
 	router := gin.New()
-	router.Use(gin.Recovery(), httpx.Errors())
+	router.Use(gin.Recovery(), web.Errors())
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.AllowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -33,7 +34,7 @@ func New(cfg config.Config, pool *pgxpool.Pool) *gin.Engine {
 		AllowCredentials: false,
 		MaxAge:           12 * time.Hour,
 	}))
-	router.NoRoute(httpx.NotFound)
+	router.NoRoute(web.NotFound)
 
 	// Chequeo de vida: no toca la base de datos.
 	router.GET("/up", func(c *gin.Context) {
@@ -56,15 +57,18 @@ func New(cfg config.Config, pool *pgxpool.Pool) *gin.Engine {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	authService := auth.NewService(auth.NewRepository(pool), cfg.TokenTTL)
+	authService := auth.NewService(auth.NewStore(pool), cfg.TokenTTL)
 	authHandler := auth.NewHandler(authService, cfg.IsLocal())
 
-	api.POST("/login", httpx.RateLimit(5, time.Minute), authHandler.Login)
+	api.POST("/login", web.RateLimit(5, time.Minute), authHandler.Login)
 	api.GET("/demo-credentials", authHandler.DemoCredentials)
 
 	protected := api.Group("", auth.Required(authService))
 	protected.GET("/user", authHandler.Me)
 	protected.POST("/logout", authHandler.Logout)
+
+	// ERP › Catálogo y maestros. (Los permisos por rol llegan con Configuraciones.)
+	catalog.NewHandler(catalog.NewService(catalog.NewStore(pool))).Routes(protected)
 
 	return router
 }

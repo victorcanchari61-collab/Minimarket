@@ -4,6 +4,6 @@ const MONEY = new Intl.NumberFormat('es-PE', {
 });
 
 /** 1240 → "S/ 1,240.00". Un solo formato de moneda para todo el sistema. */
-export function formatMoney(amount: number): string {
-    return `S/ ${MONEY.format(amount)}`;
+export function formatMoney(amount: number | string): string {
+    return `S/ ${MONEY.format(Number(amount))}`;
 }

@@ -134,6 +134,12 @@ export function useCursorList<T extends { id: number | string }, Q>({
         setAttempt((value) => value + 1);
     }, [state.rows.length, loadMore]);
 
+    /** Vuelve a pedir la primera página (tras crear, editar o eliminar). */
+    const reload = useCallback(() => {
+        setState((current) => ({ ...current, query: null, error: undefined }));
+        setAttempt((value) => value + 1);
+    }, []);
+
     return {
         rows: state.rows,
         /** Primera carga de esta consulta. */
@@ -143,5 +149,6 @@ export function useCursorList<T extends { id: number | string }, Q>({
         error: state.error,
         loadMore,
         retry,
+        reload,
     };
 }

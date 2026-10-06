@@ -11,7 +11,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"minimarket/backend/internal/shared/apperror"
+	"minimarket/backend/internal/apperror"
 )
 
 const (
@@ -28,17 +28,17 @@ const (
 
 // Service concentra las reglas de acceso. No conoce HTTP.
 type Service struct {
-	repo     *Repository
+	store    *Store
 	tokenTTL time.Duration
 	// dummyHash se compara cuando el correo no existe, para que el tiempo de
 	// respuesta no delate qué correos están registrados.
 	dummyHash []byte
 }
 
-func NewService(repo *Repository, tokenTTL time.Duration) *Service {
+func NewService(store *Store, tokenTTL time.Duration) *Service {
 	dummy, _ := bcrypt.GenerateFromPassword([]byte("no-existe"), bcryptCost)
 
-	return &Service{repo: repo, tokenTTL: tokenTTL, dummyHash: dummy}
+	return &Service{store: store, tokenTTL: tokenTTL, dummyHash: dummy}
 }
 
 func hashToken(plain string) string {
@@ -66,7 +66,7 @@ func invalidCredentials() *apperror.Error {
 // Login cambia credenciales por un token de acceso. Devuelve el token en claro
 // (es la única vez que existe) y el usuario.
 func (s *Service) Login(ctx context.Context, email, password, device string) (string, User, error) {
-	user, err := s.repo.FindUserByEmail(ctx, email)
+	user, err := s.store.FindUserByEmail(ctx, email)
 
 	switch {
 	case errors.Is(err, ErrNotFound):
@@ -96,7 +96,7 @@ func (s *Service) Login(ctx context.Context, email, password, device string) (st
 		expiresAt = &at
 	}
 
-	if err := s.repo.CreateToken(ctx, user.ID, device, hashToken(plain), expiresAt); err != nil {
+	if err := s.store.CreateToken(ctx, user.ID, device, hashToken(plain), expiresAt); err != nil {
 		return "", User{}, err
 	}
 
@@ -106,7 +106,7 @@ func (s *Service) Login(ctx context.Context, email, password, device string) (st
 // Authenticate resuelve el token de una petición. Devuelve el usuario y el id
 // del token (para poder cerrarlo).
 func (s *Service) Authenticate(ctx context.Context, plain string) (User, int64, error) {
-	user, tokenID, err := s.repo.FindUserByToken(ctx, hashToken(plain))
+	user, tokenID, err := s.store.FindUserByToken(ctx, hashToken(plain))
 	if errors.Is(err, ErrNotFound) {
 		return User{}, 0, apperror.New(apperror.Unauthenticated, "No has iniciado sesión.")
 	}
@@ -116,7 +116,7 @@ func (s *Service) Authenticate(ctx context.Context, plain string) (User, int64, 
 
 // Logout revoca el token usado en la petición.
 func (s *Service) Logout(ctx context.Context, tokenID int64) error {
-	return s.repo.DeleteToken(ctx, tokenID)
+	return s.store.DeleteToken(ctx, tokenID)
 }
 
 // EnsureDemoUser crea el usuario de prueba si falta.
@@ -126,7 +126,7 @@ func (s *Service) EnsureDemoUser(ctx context.Context) error {
 		return err
 	}
 
-	_, err = s.repo.EnsureUser(ctx, DemoName, DemoEmail, string(hash))
+	_, err = s.store.EnsureUser(ctx, DemoName, DemoEmail, string(hash))
 
 	return err
 }

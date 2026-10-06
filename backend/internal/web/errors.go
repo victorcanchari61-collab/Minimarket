@@ -1,6 +1,6 @@
 // Package httpx reúne lo común de la capa HTTP: respuestas de error, validación
 // de la entrada, límite de intentos y encabezados.
-package httpx
+package web
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"minimarket/backend/internal/shared/apperror"
+	"minimarket/backend/internal/apperror"
 )
 
 // Errors es el ÚNICO punto donde un error se convierte en respuesta JSON.

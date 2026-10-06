@@ -1,7 +1,7 @@
 // Package apperror define los errores de negocio de la API.
 //
 // Un servicio no devuelve "false" ni arma respuestas HTTP: devuelve un *Error
-// con su Code. Un único middleware (httpx.Errors) lo convierte en JSON, así el
+// con su Code. Un único middleware (web.Errors) lo convierte en JSON, así el
 // frontend decide qué mostrar por el código y no por el texto del mensaje.
 package apperror
 

@@ -12,13 +12,13 @@ import (
 // ErrNotFound indica que la consulta no encontró fila.
 var ErrNotFound = errors.New("no encontrado")
 
-// Repository es el único que habla SQL en este módulo.
-type Repository struct {
+// Store es el único que habla SQL en este paquete.
+type Store struct {
 	pool *pgxpool.Pool
 }
 
-func NewRepository(pool *pgxpool.Pool) *Repository {
-	return &Repository{pool: pool}
+func NewStore(pool *pgxpool.Pool) *Store {
+	return &Store{pool: pool}
 }
 
 const userColumns = `id, name, email, email_verified_at, password_hash`
@@ -34,14 +34,14 @@ func scanUser(row pgx.Row) (User, error) {
 	return user, err
 }
 
-func (r *Repository) FindUserByEmail(ctx context.Context, email string) (User, error) {
-	return scanUser(r.pool.QueryRow(ctx,
+func (s *Store) FindUserByEmail(ctx context.Context, email string) (User, error) {
+	return scanUser(s.pool.QueryRow(ctx,
 		`SELECT `+userColumns+` FROM users WHERE lower(email) = lower($1)`, email))
 }
 
 // EnsureUser crea el usuario si no existe y devuelve el que haya.
-func (r *Repository) EnsureUser(ctx context.Context, name, email, passwordHash string) (User, error) {
-	_, err := r.pool.Exec(ctx, `
+func (s *Store) EnsureUser(ctx context.Context, name, email, passwordHash string) (User, error) {
+	_, err := s.pool.Exec(ctx, `
 		INSERT INTO users (name, email, email_verified_at, password_hash)
 		VALUES ($1, $2, now(), $3)
 		ON CONFLICT (lower(email)) DO NOTHING`, name, email, passwordHash)
@@ -49,13 +49,13 @@ func (r *Repository) EnsureUser(ctx context.Context, name, email, passwordHash s
 		return User{}, err
 	}
 
-	return r.FindUserByEmail(ctx, email)
+	return s.FindUserByEmail(ctx, email)
 }
 
-func (r *Repository) CreateToken(
+func (s *Store) CreateToken(
 	ctx context.Context, userID int64, name, hash string, expiresAt *time.Time,
 ) error {
-	_, err := r.pool.Exec(ctx, `
+	_, err := s.pool.Exec(ctx, `
 		INSERT INTO api_tokens (user_id, name, token_hash, expires_at)
 		VALUES ($1, $2, $3, $4)`, userID, name, hash, expiresAt)
 
@@ -64,13 +64,13 @@ func (r *Repository) CreateToken(
 
 // FindUserByToken devuelve el dueño de un token vigente y el id del token, y
 // anota su último uso. Un token vencido o inexistente es ErrNotFound.
-func (r *Repository) FindUserByToken(ctx context.Context, hash string) (User, int64, error) {
+func (s *Store) FindUserByToken(ctx context.Context, hash string) (User, int64, error) {
 	var (
 		user    User
 		tokenID int64
 	)
 
-	err := r.pool.QueryRow(ctx, `
+	err := s.pool.QueryRow(ctx, `
 		UPDATE api_tokens AS t
 		SET last_used_at = now()
 		FROM users AS u
@@ -86,8 +86,8 @@ func (r *Repository) FindUserByToken(ctx context.Context, hash string) (User, in
 	return user, tokenID, err
 }
 
-func (r *Repository) DeleteToken(ctx context.Context, tokenID int64) error {
-	_, err := r.pool.Exec(ctx, `DELETE FROM api_tokens WHERE id = $1`, tokenID)
+func (s *Store) DeleteToken(ctx context.Context, tokenID int64) error {
+	_, err := s.pool.Exec(ctx, `DELETE FROM api_tokens WHERE id = $1`, tokenID)
 
 	return err
 }

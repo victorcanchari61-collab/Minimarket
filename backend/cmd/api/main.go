@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	"minimarket/backend/internal/config"
-	"minimarket/backend/internal/database"
+	"minimarket/backend/internal/platform/config"
+	"minimarket/backend/internal/platform/database"
 	"minimarket/backend/internal/server"
 )
 

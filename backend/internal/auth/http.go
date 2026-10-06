@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"minimarket/backend/internal/shared/apperror"
-	"minimarket/backend/internal/shared/httpx"
+	"minimarket/backend/internal/apperror"
+	"minimarket/backend/internal/web"
 )
 
 // Handler traduce HTTP a llamadas al servicio. Sin lógica de negocio.
@@ -28,7 +28,7 @@ type loginRequest struct {
 // POST /api/login
 func (h *Handler) Login(c *gin.Context) {
 	var req loginRequest
-	if !httpx.Bind(c, &req) {
+	if !web.Bind(c, &req) {
 		return
 	}
 

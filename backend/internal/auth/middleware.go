@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"minimarket/backend/internal/shared/apperror"
+	"minimarket/backend/internal/apperror"
 )
 
 const (
