@@ -128,13 +128,7 @@ export default function SystemLayout({
             )}
 
             <div className="flex min-w-0 flex-1 flex-col">
-                <div
-                    aria-hidden
-                    className="h-1.5"
-                    style={{ background: 'var(--grad)' }}
-                />
-
-                <header className="flex items-center justify-between gap-3 px-5 pt-4">
+                <header className="flex items-center justify-between gap-3 px-5 pt-3">
                     <div className="flex min-w-0 items-center gap-3">
                         <button
                             type="button"

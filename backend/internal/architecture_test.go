@@ -21,7 +21,11 @@ var systems = map[string]bool{"erp": true, "pos": true, "scm": true, "wms": true
 // Un submódulo puede usar a otro solo si queda escrito aquí, con su motivo:
 // "origen" → ["destino", …]. Así cada dependencia entre submódulos es una
 // decisión consciente y revisable, no un import que se coló.
-var allowedCrossImports = map[string][]string{}
+var allowedCrossImports = map[string][]string{
+	// Crear usuarios guarda contraseñas con el mismo hash que usa el login, y
+	// necesita saber quién hace la petición para no dejarlo borrarse a sí mismo.
+	"config/users/list": {"auth"},
+}
 
 type goFile struct {
 	dir     string // relativo a internal/, con /

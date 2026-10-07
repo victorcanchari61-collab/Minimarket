@@ -21,12 +21,12 @@ func NewStore(pool *pgxpool.Pool) *Store {
 	return &Store{pool: pool}
 }
 
-const userColumns = `id, name, email, email_verified_at, password_hash`
+const userColumns = `id, name, email, email_verified_at, password_hash, active`
 
 func scanUser(row pgx.Row) (User, error) {
 	var user User
 
-	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.EmailVerifiedAt, &user.PasswordHash)
+	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.EmailVerifiedAt, &user.PasswordHash, &user.Active)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return User{}, ErrNotFound
 	}
@@ -36,7 +36,7 @@ func scanUser(row pgx.Row) (User, error) {
 
 func (s *Store) FindUserByEmail(ctx context.Context, email string) (User, error) {
 	return scanUser(s.pool.QueryRow(ctx,
-		`SELECT `+userColumns+` FROM users WHERE lower(email) = lower($1)`, email))
+		`SELECT `+userColumns+` FROM users WHERE lower(email) = lower($1) AND deleted_at IS NULL`, email))
 }
 
 // EnsureUser crea el usuario si no existe y devuelve el que haya.
@@ -44,7 +44,7 @@ func (s *Store) EnsureUser(ctx context.Context, name, email, passwordHash string
 	_, err := s.pool.Exec(ctx, `
 		INSERT INTO users (name, email, email_verified_at, password_hash)
 		VALUES ($1, $2, now(), $3)
-		ON CONFLICT (lower(email)) DO NOTHING`, name, email, passwordHash)
+		ON CONFLICT (lower(email)) WHERE deleted_at IS NULL DO NOTHING`, name, email, passwordHash)
 	if err != nil {
 		return User{}, err
 	}
@@ -76,9 +76,10 @@ func (s *Store) FindUserByToken(ctx context.Context, hash string) (User, int64, 
 		FROM users AS u
 		WHERE t.token_hash = $1
 		  AND u.id = t.user_id
+		  AND u.active AND u.deleted_at IS NULL
 		  AND (t.expires_at IS NULL OR t.expires_at > now())
-		RETURNING t.id, u.id, u.name, u.email, u.email_verified_at, u.password_hash`, hash,
-	).Scan(&tokenID, &user.ID, &user.Name, &user.Email, &user.EmailVerifiedAt, &user.PasswordHash)
+		RETURNING t.id, u.id, u.name, u.email, u.email_verified_at, u.password_hash, u.active`, hash,
+	).Scan(&tokenID, &user.ID, &user.Name, &user.Email, &user.EmailVerifiedAt, &user.PasswordHash, &user.Active)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return User{}, 0, ErrNotFound
 	}

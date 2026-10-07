@@ -34,7 +34,8 @@ func bi() System {
 func configSystem() System {
 	return sys("config", "Configuraciones",
 		mod("users", "Usuarios",
-			sub("list", "Lista de usuarios", Create, Edit, Delete, Assign, ResetPassword),
+			// Elegir los roles de un usuario es parte de crearlo y editarlo.
+			sub("list", "Lista de usuarios", Create, Edit, Delete, ResetPassword),
 		),
 		mod("roles", "Roles y permisos",
 			sub("roles", "Roles", Create, Edit, Delete),

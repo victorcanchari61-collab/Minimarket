@@ -300,6 +300,7 @@ Además: `go vet ./...` y `gofmt` limpios.
 | ERP › Catálogo › Unidades y presentaciones (listado de unidades) | Hecho (el CRUD y las presentaciones, pendientes) |
 | Permisos: catálogo, roles, permisos directos y denegaciones, guardia por ruta | Hecho (falta su pantalla de administración) |
 | Configuraciones › Sucursales: lista de sucursales activas (para el selector de la cuenta) | Hecho (faltan alta, edición, empresa y almacenes) |
+| Configuraciones › Usuarios › Lista de usuarios: listado de 20 con cursor, alta, edición con roles, desactivar, eliminar y reiniciar contraseña; reglas de "siempre un administrador activo" y "nadie se borra ni desactiva a sí mismo" | Hecho |
 | Empresa y sucursales: CRUD, datos de la empresa y almacenes | Pendiente (siguiente) |
 | ERP › Inventario con kardex | Pendiente |
 | Eventos entre sistemas y trabajos en segundo plano (SUNAT, CRM, BI) | Pendiente |

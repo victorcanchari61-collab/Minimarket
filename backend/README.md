@@ -27,6 +27,10 @@ Requiere Go 1.27 y PostgreSQL (base `minimarket`). En Windows, `iniciar-api.bat`
 | POST · GET · PUT · DELETE | `/api/catalog/products[/:id]` | crear, ver, editar y eliminar (marca `deleted_at`) |
 | GET | `/api/catalog/products/summary` | activos, inactivos y categorías en uso |
 | GET | `/api/catalog/categories` · `/api/catalog/units` | listas para los formularios |
+| GET · POST | `/api/users` | usuarios: 20 por petición con cursor (`search`, `role_id`, `status`, `sort`, `direction`) · alta con roles |
+| GET · PUT · DELETE | `/api/users/:id` | ver, editar (datos, estado y roles) y eliminar |
+| PUT | `/api/users/:id/password` | reiniciar contraseña (cierra las sesiones del usuario) |
+| GET | `/api/users/summary` · `/api/users/roles` | activos e inactivos · roles para el formulario |
 | GET | `/api/company/branches` | sucursales activas (cualquier usuario con sesión; alimenta el selector de sucursal) |
 | GET | `/api/permissions/me` | acciones que puede hacer el usuario (arma el menú) |
 | GET | `/api/permissions/catalog` | árbol completo de permisos (sistema → módulo → submódulo → acciones) |
@@ -44,6 +48,7 @@ internal/
   auth/                          login por token
   permission/                    catálogo de permisos, regla de acceso y guardia por ruta
   erp/catalog/products/          un submódulo = un paquete: http.go service.go store.go list_query.go types.go errors.go wire.go
+  config/users/list/             Configuraciones › Usuarios › Lista de usuarios
   config/company/branches/        Configuraciones › Empresa y sucursales › Sucursales
   erp/catalog/units/             otro submódulo (Unidades y presentaciones)
   server/                        enrutador (compone los submódulos)

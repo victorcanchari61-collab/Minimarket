@@ -10,6 +10,7 @@ type User struct {
 	Email           string
 	EmailVerifiedAt *time.Time
 	PasswordHash    string
+	Active          bool
 }
 
 // UserResource es la forma del usuario en las respuestas JSON. Nunca incluye el

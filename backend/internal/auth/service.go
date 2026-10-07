@@ -41,6 +41,14 @@ func NewService(store *Store, tokenTTL time.Duration) *Service {
 	return &Service{store: store, tokenTTL: tokenTTL, dummyHash: dummy}
 }
 
+// HashPassword es la única forma de guardar una contraseña: quien crea o
+// cambia contraseñas (Configuraciones › Usuarios) pasa por aquí.
+func HashPassword(plain string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(plain), bcryptCost)
+
+	return string(hash), err
+}
+
 func hashToken(plain string) string {
 	sum := sha256.Sum256([]byte(plain))
 
@@ -79,6 +87,12 @@ func (s *Service) Login(ctx context.Context, email, password, device string) (st
 
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) != nil {
 		return "", User{}, invalidCredentials()
+	}
+
+	// Solo se avisa después de acertar la contraseña: así no se delata qué
+	// correos existen.
+	if !user.Active {
+		return "", User{}, apperror.New(apperror.Forbidden, "Tu usuario está desactivado. Habla con un administrador.")
 	}
 
 	plain, err := newToken()

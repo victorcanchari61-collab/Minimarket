@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import UsersScreen from '@/features/config/users/users-screen';
 import ProductsScreen from '@/features/erp/catalog/products-screen';
 
 /**
@@ -7,4 +8,5 @@ import ProductsScreen from '@/features/erp/catalog/products-screen';
  */
 export const SCREENS: Record<string, ComponentType> = {
     'erp/catalogo-y-maestros/productos': ProductsScreen,
+    'config/usuarios/lista-de-usuarios': UsersScreen,
 };
