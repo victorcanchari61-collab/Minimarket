@@ -299,7 +299,8 @@ Además: `go vet ./...` y `gofmt` limpios.
 | ERP › Catálogo › Productos (listado, crear, editar, eliminar, resumen, categorías) | Hecho |
 | ERP › Catálogo › Unidades y presentaciones (listado de unidades) | Hecho (el CRUD y las presentaciones, pendientes) |
 | Permisos: catálogo, roles, permisos directos y denegaciones, guardia por ruta | Hecho (falta su pantalla de administración) |
-| Empresa y sucursales (Configuraciones) | Pendiente (siguiente) |
+| Configuraciones › Sucursales: lista de sucursales activas (para el selector de la cuenta) | Hecho (faltan alta, edición, empresa y almacenes) |
+| Empresa y sucursales: CRUD, datos de la empresa y almacenes | Pendiente (siguiente) |
 | ERP › Inventario con kardex | Pendiente |
 | Eventos entre sistemas y trabajos en segundo plano (SUNAT, CRM, BI) | Pendiente |
 | Tipo decimal para cálculos de dinero y cantidades | Pendiente (se decide al primer cálculo) |

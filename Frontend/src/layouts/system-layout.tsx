@@ -1,4 +1,4 @@
-import { Menu } from 'lucide-react';
+import { Menu, PanelLeftOpen } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import NotificationBell from '@/components/notification-bell';
@@ -11,12 +11,21 @@ import { visibleNav } from '@/lib/navigation';
 import type { PortalEntry } from '@/lib/systems';
 
 const COLLAPSED_KEY = 'minimarket.sidebar.collapsed';
+const HIDDEN_KEY = 'minimarket.sidebar.hidden';
 
-function readCollapsed(): boolean {
+function readFlag(key: string): boolean {
     try {
-        return window.localStorage.getItem(COLLAPSED_KEY) === '1';
+        return window.localStorage.getItem(key) === '1';
     } catch {
         return false;
+    }
+}
+
+function writeFlag(key: string, value: boolean) {
+    try {
+        window.localStorage.setItem(key, value ? '1' : '0');
+    } catch {
+        // Sin almacenamiento: el estado dura solo esta visita.
     }
 }
 
@@ -37,7 +46,8 @@ export default function SystemLayout({
 }: SystemLayoutProps) {
     const { user, signOut } = useAuthUser();
     const { ready, can } = usePermissions();
-    const [collapsed, setCollapsed] = useState(readCollapsed);
+    const [collapsed, setCollapsed] = useState(() => readFlag(COLLAPSED_KEY));
+    const [hidden, setHidden] = useState(() => readFlag(HIDDEN_KEY));
     const [mobileOpen, setMobileOpen] = useState(false);
 
     useEffect(() => {
@@ -58,14 +68,15 @@ export default function SystemLayout({
 
     const toggleCollapsed = () => {
         setCollapsed((value) => {
-            try {
-                window.localStorage.setItem(COLLAPSED_KEY, value ? '0' : '1');
-            } catch {
-                // Sin almacenamiento: el estado dura solo esta visita.
-            }
+            writeFlag(COLLAPSED_KEY, !value);
 
             return !value;
         });
+    };
+
+    const setSidebarHidden = (value: boolean) => {
+        writeFlag(HIDDEN_KEY, value);
+        setHidden(value);
     };
 
     const nav = ready ? visibleNav(system.key, can) : [];
@@ -80,16 +91,19 @@ export default function SystemLayout({
             {/* Destino de los modales: dentro del data-system para heredar su color. */}
             <div id="modal-root" />
 
-            <aside className="sticky top-0 hidden h-dvh shrink-0 lg:block">
-                <SystemSidebar
-                    system={system}
-                    nav={nav}
-                    activeModule={activeModule}
-                    activeItem={activeItem}
-                    collapsed={collapsed}
-                    onToggleCollapsed={toggleCollapsed}
-                />
-            </aside>
+            {!hidden && (
+                <aside className="sticky top-0 hidden h-dvh shrink-0 lg:block">
+                    <SystemSidebar
+                        system={system}
+                        nav={nav}
+                        activeModule={activeModule}
+                        activeItem={activeItem}
+                        collapsed={collapsed}
+                        onToggleCollapsed={toggleCollapsed}
+                        onHide={() => setSidebarHidden(true)}
+                    />
+                </aside>
+            )}
 
             {mobileOpen && (
                 <div className="fixed inset-0 z-40 lg:hidden">
@@ -130,6 +144,20 @@ export default function SystemLayout({
                         >
                             <Menu className="size-[18px]" aria-hidden />
                         </button>
+                        {hidden && (
+                            <button
+                                type="button"
+                                onClick={() => setSidebarHidden(false)}
+                                aria-label="Mostrar el menú"
+                                title="Mostrar el menú"
+                                className="hidden size-11 shrink-0 place-items-center rounded-full border border-[#e5e7eb] bg-white outline-none hover:bg-black/[0.03] focus-visible:ring-[3px] focus-visible:ring-(--sys-400) lg:grid"
+                            >
+                                <PanelLeftOpen
+                                    className="size-[18px]"
+                                    aria-hidden
+                                />
+                            </button>
+                        )}
                         <div className="min-w-0">{breadcrumb}</div>
                     </div>
 
@@ -138,10 +166,6 @@ export default function SystemLayout({
                             <UserMenu
                                 user={user}
                                 currentKey={system.key}
-                                context={{
-                                    label: system.name,
-                                    icon: system.icon,
-                                }}
                                 onSignOut={signOut}
                             />
                             <NotificationBell />

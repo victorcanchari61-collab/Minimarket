@@ -81,7 +81,7 @@ func Pool(t *testing.T) *pgxpool.Pool {
 
 	// Las unidades son datos de referencia de la migración: se conservan.
 	if _, err := pool.Exec(ctx, `
-		TRUNCATE api_tokens, users, products, product_categories RESTART IDENTITY CASCADE`); err != nil {
+		TRUNCATE api_tokens, users, products, product_categories, branches RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("limpieza: %v", err)
 	}
 

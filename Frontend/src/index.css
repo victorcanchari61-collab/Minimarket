@@ -203,6 +203,23 @@
     animation-delay: var(--sys-delay, 0ms);
 }
 
+/* Menú flotante del sidebar contraído: entra desde el ícono que lo abrió. */
+@keyframes flyout-in {
+    from {
+        opacity: 0;
+        transform: translateX(-8px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.flyout-in {
+    transform-origin: left top;
+    animation: flyout-in 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 .sys-fill {
     transform-origin: left;
     animation: sys-fill var(--sys-duration, 6s) linear both;
@@ -213,7 +230,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .sys-rise {
+    .sys-rise,
+    .flyout-in {
         animation: none;
     }
 }

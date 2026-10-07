@@ -1,16 +1,22 @@
 import { Link } from 'react-router-dom';
-import { Check, ChevronDown, House, LogOut } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import {
+    Check,
+    ChevronDown,
+    House,
+    LogOut,
+    Store,
+    Warehouse,
+} from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
+import { useBranches } from '@/hooks/use-branches';
 import { usePermissions } from '@/hooks/use-permissions';
+import type { Branch } from '@/lib/branches';
 import type { PortalEntry, PortalKey } from '@/lib/systems';
 import { SETTINGS, SYSTEM_LIST } from '@/lib/systems';
 import { cn } from '@/lib/utils';
 
 type UserMenuProps = {
     user: { name: string; email: string };
-    /** Etiqueta de contexto junto al nombre (sistema o sucursal activa). */
-    context?: { label: string; icon?: LucideIcon };
     /** Sistema que se está usando; se marca en la lista. */
     currentKey?: PortalKey;
     onSignOut: () => void;
@@ -18,6 +24,12 @@ type UserMenuProps = {
 
 const ITEM =
     'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[#1a1033] outline-none hover:bg-black/[0.04] focus-visible:bg-black/[0.04]';
+
+const SELECTED =
+    'bg-[color-mix(in_oklab,var(--sys-600,var(--primary))_10%,white)] font-semibold text-(--sys-600,var(--primary)) hover:bg-[color-mix(in_oklab,var(--sys-600,var(--primary))_14%,white)]';
+
+const SECTION =
+    'px-3 pt-3 pb-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase';
 
 function initialsOf(name: string): string {
     return (
@@ -30,9 +42,20 @@ function initialsOf(name: string): string {
     );
 }
 
+function BranchIcon({
+    branch,
+    className,
+}: {
+    branch: Branch;
+    className: string;
+}) {
+    const Icon = branch.kind === 'distribution' ? Warehouse : Store;
+
+    return <Icon className={className} aria-hidden />;
+}
+
 export default function UserMenu({
     user,
-    context,
     currentKey,
     onSignOut,
 }: UserMenuProps) {
@@ -40,6 +63,7 @@ export default function UserMenu({
     const rootRef = useRef<HTMLDivElement>(null);
     const menuId = useId();
     const { ready, canEnter } = usePermissions();
+    const { branches, active, select } = useBranches();
 
     useEffect(() => {
         if (!open) {
@@ -92,12 +116,13 @@ export default function UserMenu({
                     </span>
                 </span>
 
-                {context && (
-                    <span className="hidden items-center gap-1.5 rounded-full bg-[color-mix(in_oklab,var(--sys-600,var(--primary))_12%,white)] px-2.5 py-1 text-[11px] font-bold tracking-wide text-(--sys-600,var(--primary)) uppercase md:inline-flex">
-                        {context.icon && (
-                            <context.icon className="size-3" aria-hidden />
-                        )}
-                        {context.label}
+                {active && (
+                    <span className="hidden max-w-[12rem] items-center gap-1.5 rounded-full bg-[color-mix(in_oklab,var(--sys-600,var(--primary))_12%,white)] px-2.5 py-1 text-[11px] font-bold tracking-wide text-(--sys-600,var(--primary)) uppercase md:inline-flex">
+                        <BranchIcon
+                            branch={active}
+                            className="size-3 shrink-0"
+                        />
+                        <span className="truncate">{active.name}</span>
                     </span>
                 )}
 
@@ -111,16 +136,27 @@ export default function UserMenu({
                 <div
                     id={menuId}
                     role="menu"
-                    className="absolute right-0 z-20 mt-2 max-h-[min(32rem,80dvh)] w-72 overflow-y-auto rounded-2xl border border-[#e5e7eb] bg-white p-1.5 shadow-[0_18px_36px_-16px_rgb(16_24_40/0.35)]"
+                    className="absolute right-0 z-20 mt-2 max-h-[min(34rem,80dvh)] w-72 overflow-y-auto rounded-2xl border border-[#e5e7eb] bg-white p-1.5 shadow-[0_18px_36px_-16px_rgb(16_24_40/0.35)]"
                 >
-                    <div className="px-3 py-2.5 sm:hidden">
+                    <div className="px-3 py-2.5">
                         <p className="truncate text-sm font-bold text-[#1a1033]">
                             {user.name}
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
                             {user.email}
                         </p>
+                        {active && (
+                            <span className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full bg-[color-mix(in_oklab,var(--sys-600,var(--primary))_12%,white)] px-2.5 py-1 text-[11px] font-bold tracking-wide text-(--sys-600,var(--primary)) uppercase">
+                                <BranchIcon
+                                    branch={active}
+                                    className="size-3 shrink-0"
+                                />
+                                <span className="truncate">{active.name}</span>
+                            </span>
+                        )}
                     </div>
+
+                    <div className="my-1 border-t border-[#e5e7eb]" />
 
                     <Link
                         to="/sistemas"
@@ -135,10 +171,50 @@ export default function UserMenu({
                         Inicio
                     </Link>
 
-                    <p className="px-3 pt-3 pb-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-                        Sistemas
-                    </p>
-                    {SYSTEM_LIST.filter((entry) => ready && canEnter(entry.key)).map((entry) => (
+                    {branches.length > 0 && (
+                        <>
+                            <p className={SECTION}>Sucursales</p>
+                            {branches.map((branch) => {
+                                const selected = branch.id === active?.id;
+
+                                return (
+                                    <button
+                                        key={branch.id}
+                                        type="button"
+                                        role="menuitemradio"
+                                        aria-checked={selected}
+                                        onClick={() => {
+                                            select(branch.id);
+                                            setOpen(false);
+                                        }}
+                                        className={cn(
+                                            ITEM,
+                                            selected && SELECTED,
+                                        )}
+                                    >
+                                        <BranchIcon
+                                            branch={branch}
+                                            className="size-4 shrink-0"
+                                        />
+                                        <span className="min-w-0 flex-1 truncate">
+                                            {branch.name}
+                                        </span>
+                                        {selected && (
+                                            <Check
+                                                className="size-4 shrink-0"
+                                                aria-hidden
+                                            />
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </>
+                    )}
+
+                    <p className={SECTION}>Sistemas</p>
+                    {SYSTEM_LIST.filter(
+                        (entry) => ready && canEnter(entry.key),
+                    ).map((entry) => (
                         <SystemLink
                             key={entry.key}
                             entry={entry}
@@ -163,12 +239,12 @@ export default function UserMenu({
                         type="button"
                         role="menuitem"
                         onClick={onSignOut}
-                        className={ITEM}
+                        className={cn(
+                            ITEM,
+                            'font-semibold text-[#dc2626] hover:bg-[#dc2626]/[0.07] focus-visible:bg-[#dc2626]/[0.07]',
+                        )}
                     >
-                        <LogOut
-                            className="size-4 text-muted-foreground"
-                            aria-hidden
-                        />
+                        <LogOut className="size-4" aria-hidden />
                         Cerrar sesión
                     </button>
                 </div>

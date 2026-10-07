@@ -79,6 +79,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if err := ensureBranches(ctx, pool); err != nil {
+		log.Fatal(err)
+	}
+
 	service := products.NewService(products.NewStore(pool))
 
 	existing, err := countProducts(ctx, pool)
@@ -160,4 +164,19 @@ func lookupUnitID(ctx context.Context, pool *pgxpool.Pool, name string) (id int6
 	err = pool.QueryRow(ctx, `SELECT id FROM units WHERE lower(name) = lower($1)`, name).Scan(&id)
 
 	return id, err
+}
+
+// ensureBranches deja unas sucursales de ejemplo si todavía no hay ninguna.
+func ensureBranches(ctx context.Context, pool *pgxpool.Pool) error {
+	_, err := pool.Exec(ctx, `
+		INSERT INTO branches (code, name, address, kind)
+		SELECT * FROM (VALUES
+			('C01', 'Sucursal Centro', 'Av. Principal 120', 'store'),
+			('C02', 'Sucursal Norte', 'Jr. Las Flores 455', 'store'),
+			('C03', 'Sucursal Sur', 'Av. Los Olivos 890', 'store'),
+			('CD1', 'Centro de distribución', 'Parque Industrial Mz. B', 'distribution')
+		) AS v (code, name, address, kind)
+		WHERE NOT EXISTS (SELECT 1 FROM branches)`)
+
+	return err
 }

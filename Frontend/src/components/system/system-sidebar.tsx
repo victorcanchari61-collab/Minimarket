@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
     ChevronDown,
+    ChevronsLeft,
     House,
     PanelLeftClose,
     PanelLeftOpen,
@@ -10,6 +11,8 @@ import { useState } from 'react';
 import type { NavModule } from '@/lib/navigation';
 import { slugify } from '@/lib/navigation';
 import type { PortalEntry } from '@/lib/systems';
+import CollapsedModule from '@/components/system/collapsed-module';
+import { ACTIVE_ROW } from '@/components/system/nav-styles';
 import ThemedIcon from '@/components/system/themed-icon';
 import { cn } from '@/lib/utils';
 
@@ -20,16 +23,14 @@ type SystemSidebarProps = {
     activeItem?: string | null;
     collapsed: boolean;
     onToggleCollapsed: () => void;
+    /** Oculta el menú por completo (en escritorio; se vuelve a abrir desde el encabezado). */
+    onHide?: () => void;
     /** Solo en móvil: cierra el panel al elegir una opción. */
     onClose?: () => void;
 };
 
-/**
- * Opción activa: fondo suave del tema, texto en el color del sistema y una
- * barra vertical con el degradado pegada al borde izquierdo del menú.
- */
-const ACTIVE_ROW =
-    "relative bg-[color-mix(in_oklab,var(--grad-start)_9%,white)] text-(--sys-600) before:absolute before:top-1/2 before:-left-2 before:h-6 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-[linear-gradient(180deg,var(--grad-start),var(--grad-end))] before:content-['']";
+const FOOTER_BUTTON =
+    'flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-[12.5px] font-medium text-muted-foreground outline-none hover:bg-black/[0.04] hover:text-(--text) focus-visible:ring-[3px] focus-visible:ring-(--sys-400)';
 
 export default function SystemSidebar({
     system,
@@ -38,6 +39,7 @@ export default function SystemSidebar({
     activeItem,
     collapsed,
     onToggleCollapsed,
+    onHide,
     onClose,
 }: SystemSidebarProps) {
     const [open, setOpen] = useState<Set<string>>(
@@ -56,13 +58,6 @@ export default function SystemSidebar({
     }
 
     const toggleModule = (slug: string) => {
-        if (collapsed) {
-            onToggleCollapsed();
-            setOpen((current) => new Set(current).add(slug));
-
-            return;
-        }
-
         setOpen((current) => {
             const next = new Set(current);
 
@@ -156,18 +151,27 @@ export default function SystemSidebar({
                     const isActiveModule = activeModule === slug;
                     const panelId = `nav-${system.key}-${slug}`;
 
+                    if (collapsed) {
+                        return (
+                            <CollapsedModule
+                                key={slug}
+                                entry={entry}
+                                base={base}
+                                isActiveModule={isActiveModule}
+                                activeItem={activeItem}
+                            />
+                        );
+                    }
+
                     return (
                         <li key={slug}>
                             <button
                                 type="button"
                                 onClick={() => toggleModule(slug)}
-                                title={collapsed ? entry.label : undefined}
                                 aria-expanded={isOpen}
                                 aria-controls={panelId}
                                 className={cn(
                                     'flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-[13px] font-semibold text-(--text) outline-none hover:bg-black/[0.04] focus-visible:ring-[3px] focus-visible:ring-(--sys-400)',
-                                    collapsed && isActiveModule && ACTIVE_ROW,
-                                    collapsed && 'justify-center',
                                 )}
                             >
                                 <span className="grid size-7 shrink-0 place-items-center">
@@ -176,20 +180,16 @@ export default function SystemSidebar({
                                         className="size-[18px]"
                                     />
                                 </span>
-                                {!collapsed && (
-                                    <>
-                                        <span className="min-w-0 flex-1 leading-snug">
-                                            {entry.label}
-                                        </span>
-                                        <ChevronDown
-                                            className={cn(
-                                                'size-3.5 shrink-0 text-muted-foreground transition-transform duration-200',
-                                                isOpen && 'rotate-180',
-                                            )}
-                                            aria-hidden
-                                        />
-                                    </>
-                                )}
+                                <span className="min-w-0 flex-1 leading-snug">
+                                    {entry.label}
+                                </span>
+                                <ChevronDown
+                                    className={cn(
+                                        'size-3.5 shrink-0 text-muted-foreground transition-transform duration-200',
+                                        isOpen && 'rotate-180',
+                                    )}
+                                    aria-hidden
+                                />
                             </button>
 
                             {!collapsed && (
@@ -253,7 +253,7 @@ export default function SystemSidebar({
                 })}
             </ul>
 
-            <div className="hidden border-t border-[color-mix(in_oklab,var(--grad-start)_10%,#e5e7eb)] p-2 lg:block">
+            <div className="hidden flex-col gap-0.5 border-t border-[color-mix(in_oklab,var(--grad-start)_10%,#e5e7eb)] p-2 lg:flex">
                 <button
                     type="button"
                     onClick={onToggleCollapsed}
@@ -262,10 +262,7 @@ export default function SystemSidebar({
                     }
                     aria-expanded={!collapsed}
                     title={collapsed ? 'Expandir el menú' : undefined}
-                    className={cn(
-                        'flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-[12.5px] font-medium text-muted-foreground outline-none hover:bg-black/[0.04] hover:text-(--text) focus-visible:ring-[3px] focus-visible:ring-(--sys-400)',
-                        collapsed && 'justify-center',
-                    )}
+                    className={cn(FOOTER_BUTTON, collapsed && 'justify-center')}
                 >
                     <span className="grid size-7 shrink-0 place-items-center">
                         {collapsed ? (
@@ -282,6 +279,27 @@ export default function SystemSidebar({
                     </span>
                     {!collapsed && 'Contraer menú'}
                 </button>
+
+                {onHide && (
+                    <button
+                        type="button"
+                        onClick={onHide}
+                        aria-label="Ocultar el menú"
+                        title={collapsed ? 'Ocultar el menú' : undefined}
+                        className={cn(
+                            FOOTER_BUTTON,
+                            collapsed && 'justify-center',
+                        )}
+                    >
+                        <span className="grid size-7 shrink-0 place-items-center">
+                            <ChevronsLeft
+                                className="size-[18px]"
+                                aria-hidden
+                            />
+                        </span>
+                        {!collapsed && 'Ocultar menú'}
+                    </button>
+                )}
             </div>
         </nav>
     );
