@@ -26,7 +26,9 @@ func NewStore(db database.Executor) *Store {
 
 // El código 'admin' es el del rol Administrador (ver la migración de permisos).
 const userSelect = `
-	SELECT u.id, u.name, u.email, u.active, u.created_at,
+	SELECT u.id, u.code, u.name, u.email, u.active, u.created_at, u.last_login_at,
+	       COALESCE(u.document_type, ''), COALESCE(u.document_number, ''),
+	       COALESCE(u.phone, ''), COALESCE(u.position, ''),
 	       COALESCE((SELECT array_agg(r.id ORDER BY r.name, r.id)
 	                 FROM user_roles ur JOIN roles r ON r.id = ur.role_id
 	                 WHERE ur.user_id = u.id), '{}'::bigint[]),
@@ -39,11 +41,13 @@ func scanUser(row pgx.Row) (User, error) {
 	var (
 		u        User
 		active   bool
+		docType  string
 		roleIDs  []int64
 		roleName []string
 	)
 
-	err := row.Scan(&u.ID, &u.Name, &u.Email, &active, &u.CreatedAt, &roleIDs, &roleName)
+	err := row.Scan(&u.ID, &u.Code, &u.Name, &u.Email, &active, &u.CreatedAt, &u.LastLoginAt,
+		&docType, &u.DocumentNumber, &u.Phone, &u.Position, &roleIDs, &roleName)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return User{}, errNotFound
 	}
@@ -52,6 +56,7 @@ func scanUser(row pgx.Row) (User, error) {
 		return User{}, err
 	}
 
+	u.DocumentType = DocumentType(docType)
 	u.Status = StatusInactive
 	if active {
 		u.Status = StatusActive
@@ -76,6 +81,8 @@ func translate(err error) error {
 	switch {
 	case pgErr.Code == "23505" && pgErr.ConstraintName == "users_email_unique":
 		return errDuplicateEmail
+	case pgErr.Code == "23505" && pgErr.ConstraintName == "users_document_unique":
+		return errDuplicateDoc
 	case pgErr.Code == "23503" && pgErr.ConstraintName == "user_roles_role_id_fkey":
 		return errUnknownRole
 	default:
@@ -87,21 +94,31 @@ func (s *Store) Get(ctx context.Context, id int64) (User, error) {
 	return scanUser(s.db.QueryRow(ctx, userSelect+` WHERE u.id = $1 AND u.deleted_at IS NULL`, id))
 }
 
-func (s *Store) Insert(ctx context.Context, name, email, passwordHash string, active bool) (int64, error) {
+// Insert crea el usuario; su código lo genera la base de datos.
+func (s *Store) Insert(ctx context.Context, in Input, passwordHash string) (int64, error) {
 	var id int64
 
 	err := s.db.QueryRow(ctx, `
-		INSERT INTO users (name, email, email_verified_at, password_hash, active)
-		VALUES ($1, $2, now(), $3, $4)
-		RETURNING id`, name, email, passwordHash, active).Scan(&id)
+		INSERT INTO users (name, email, email_verified_at, password_hash, active,
+		                   document_type, document_number, phone, position)
+		VALUES ($1, $2, now(), $3, $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, ''))
+		RETURNING id`,
+		in.Name, in.Email, passwordHash, in.Status == StatusActive,
+		string(in.DocumentType), in.DocumentNumber, in.Phone, in.Position,
+	).Scan(&id)
 
 	return id, translate(err)
 }
 
-func (s *Store) Update(ctx context.Context, id int64, name, email string, active bool) error {
+func (s *Store) Update(ctx context.Context, id int64, in Input) error {
 	tag, err := s.db.Exec(ctx, `
-		UPDATE users SET name = $2, email = $3, active = $4, updated_at = now()
-		WHERE id = $1 AND deleted_at IS NULL`, id, name, email, active)
+		UPDATE users
+		SET name = $2, email = $3, active = $4,
+		    document_type = NULLIF($5, ''), document_number = NULLIF($6, ''),
+		    phone = NULLIF($7, ''), position = NULLIF($8, ''), updated_at = now()
+		WHERE id = $1 AND deleted_at IS NULL`,
+		id, in.Name, in.Email, in.Status == StatusActive,
+		string(in.DocumentType), in.DocumentNumber, in.Phone, in.Position)
 	if err != nil {
 		return translate(err)
 	}
@@ -238,8 +255,15 @@ func (s *Store) Summary(ctx context.Context) (Summary, error) {
 	var sum Summary
 
 	err := s.db.QueryRow(ctx, `
-		SELECT count(*) FILTER (WHERE active), count(*) FILTER (WHERE NOT active)
-		FROM users WHERE deleted_at IS NULL`).Scan(&sum.Active, &sum.Inactive)
+		SELECT count(*) FILTER (WHERE u.active),
+		       count(*) FILTER (WHERE NOT u.active),
+		       count(*) FILTER (WHERE u.active AND EXISTS (
+		           SELECT 1 FROM user_roles ur JOIN roles r ON r.id = ur.role_id
+		           WHERE ur.user_id = u.id AND r.code = 'admin')),
+		       count(*) FILTER (WHERE NOT EXISTS (
+		           SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id))
+		FROM users u WHERE u.deleted_at IS NULL`,
+	).Scan(&sum.Active, &sum.Inactive, &sum.Administrators, &sum.WithoutRoles)
 
 	return sum, err
 }

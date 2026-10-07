@@ -92,7 +92,8 @@ export default function SystemLayout({
             <div id="modal-root" />
 
             {!hidden && (
-                <aside className="sticky top-0 hidden h-dvh shrink-0 lg:block">
+                // z-30: el panel flotante del menú contraído sale de aquí y debe quedar sobre el contenido.
+                <aside className="sticky top-0 z-30 hidden h-dvh shrink-0 lg:block">
                     <SystemSidebar
                         system={system}
                         nav={nav}

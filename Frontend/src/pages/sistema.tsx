@@ -136,7 +136,7 @@ function SistemaView({ system: key, module, item }: Props) {
                         backLabel="Volver al inicio"
                     />
                 ) : Screen ? (
-                    <div className="mx-auto max-w-[1400px]">
+                    <div className="w-full">
                         <Screen />
                     </div>
                 ) : (

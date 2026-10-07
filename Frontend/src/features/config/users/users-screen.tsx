@@ -3,6 +3,7 @@ import {
     Pencil,
     Plus,
     ShieldCheck,
+    ShieldOff,
     Trash2,
     UserCheck,
     UserRound,
@@ -39,6 +40,10 @@ const STATUS_OPTIONS = [
     { value: 'active', label: 'Activo' },
     { value: 'inactive', label: 'Inactivo' },
 ];
+
+/** Mientras llega el resumen se muestra un guion, no un cero que pueda confundir. */
+const count = (value: number | undefined) =>
+    value === undefined ? '—' : String(value);
 
 const messageOf = (error: unknown) =>
     error instanceof Error ? error.message : 'No se pudo completar la acción.';
@@ -81,6 +86,17 @@ export default function UsersScreen() {
     const columns = useMemo<DataTableColumn<SystemUser>[]>(
         () => [
             {
+                key: 'code',
+                label: 'Código',
+                sortable: true,
+                width: 100,
+                render: (user) => (
+                    <span className="font-mono text-[13px] text-ink-muted">
+                        {user.code}
+                    </span>
+                ),
+            },
+            {
                 key: 'name',
                 label: 'Nombre',
                 sortable: true,
@@ -90,10 +106,36 @@ export default function UsersScreen() {
                 ),
             },
             {
+                key: 'document',
+                label: 'Documento',
+                filterable: false,
+                width: 150,
+                render: (user) =>
+                    user.document_number
+                        ? `${user.document_type_label} ${user.document_number}`
+                        : '—',
+            },
+            {
                 key: 'email',
                 label: 'Correo',
                 sortable: true,
                 width: 240,
+            },
+            {
+                key: 'phone',
+                label: 'Teléfono',
+                searchable: false,
+                filterable: false,
+                width: 130,
+                render: (user) => user.phone || '—',
+            },
+            {
+                key: 'position',
+                label: 'Cargo',
+                searchable: false,
+                filterable: false,
+                width: 160,
+                render: (user) => user.position || '—',
             },
             {
                 key: 'roles',
@@ -131,6 +173,15 @@ export default function UsersScreen() {
                         {user.status_label}
                     </Badge>
                 ),
+            },
+            {
+                key: 'last_login',
+                label: 'Último acceso',
+                searchable: false,
+                filterable: false,
+                width: 140,
+                render: (user) =>
+                    user.last_login_at ? formatDate(user.last_login_at) : 'Nunca',
             },
             {
                 key: 'created',
@@ -184,24 +235,37 @@ export default function UsersScreen() {
                 <>
                     <StatCard
                         label="Usuarios activos"
-                        value={summary ? String(summary.active) : '—'}
+                        value={count(summary?.active)}
                         icon={<UserCheck className="size-5" aria-hidden />}
+                        tone="success"
+                        hint="Pueden entrar al sistema"
                     />
                     <StatCard
                         label="Inactivos"
-                        value={summary ? String(summary.inactive) : '—'}
+                        value={count(summary?.inactive)}
                         icon={<UserX className="size-5" aria-hidden />}
                         tone="neutral"
+                        hint="Desactivados"
                     />
                     <StatCard
-                        label="Roles disponibles"
-                        value={String(roles.length)}
+                        label="Administradores"
+                        value={count(summary?.administrators)}
                         icon={<ShieldCheck className="size-5" aria-hidden />}
                         tone="info"
+                        hint="Activos con acceso total"
+                    />
+                    <StatCard
+                        label="Sin roles"
+                        value={count(summary?.without_roles)}
+                        icon={<ShieldOff className="size-5" aria-hidden />}
+                        tone="warning"
+                        hint="No pueden hacer nada aún"
                     />
                 </>
             }
             columns={columns}
+            rowNumbers
+            defaultHidden={['position', 'created']}
             rows={list.rows}
             loading={list.loading}
             loadingMore={list.loadingMore}
@@ -210,7 +274,7 @@ export default function UsersScreen() {
             error={list.error}
             onRetry={list.retry}
             onQuery={setQuery}
-            searchPlaceholder="Buscar por nombre o correo…"
+            searchPlaceholder="Buscar por nombre, correo, código o documento…"
             empty="No hay usuarios que coincidan."
             cardIcon={UserRound}
             rowActions={

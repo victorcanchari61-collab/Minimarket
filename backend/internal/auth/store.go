@@ -58,6 +58,13 @@ func (s *Store) CreateToken(
 	_, err := s.pool.Exec(ctx, `
 		INSERT INTO api_tokens (user_id, name, token_hash, expires_at)
 		VALUES ($1, $2, $3, $4)`, userID, name, hash, expiresAt)
+	if err != nil {
+		return err
+	}
+
+	// El ingreso queda anotado en el usuario: los tokens se borran al cerrar
+	// sesión, así que de ellos no se podría saber cuándo entró por última vez.
+	_, err = s.pool.Exec(ctx, `UPDATE users SET last_login_at = now() WHERE id = $1`, userID)
 
 	return err
 }

@@ -11,6 +11,7 @@ var (
 	errNotFound       = errors.New("users: no encontrado")
 	errDuplicateEmail = errors.New("users: correo repetido")
 	errUnknownRole    = errors.New("users: rol inexistente")
+	errDuplicateDoc   = errors.New("users: documento repetido")
 )
 
 func userNotFound() *apperror.Error {
@@ -20,6 +21,13 @@ func userNotFound() *apperror.Error {
 func emailTaken() *apperror.Error {
 	err := apperror.New(apperror.Conflict, "Ya existe un usuario con ese correo.")
 	err.Fields = map[string][]string{"email": {err.Message}}
+
+	return err
+}
+
+func documentTaken() *apperror.Error {
+	err := apperror.New(apperror.Conflict, "Ya existe un usuario con ese documento.")
+	err.Fields = map[string][]string{"document_number": {err.Message}}
 
 	return err
 }

@@ -3,6 +3,7 @@ package list
 import (
 	"context"
 	"errors"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -15,6 +16,16 @@ import (
 )
 
 const minPasswordLength = 8
+
+// Formato de cada documento: el DNI son 8 dígitos; el carné y el pasaporte,
+// letras y números.
+var documentFormat = map[DocumentType]*regexp.Regexp{
+	DocumentDNI:      regexp.MustCompile(`^\d{8}$`),
+	DocumentCE:       regexp.MustCompile(`^[A-Z0-9]{9,12}$`),
+	DocumentPassport: regexp.MustCompile(`^[A-Z0-9]{6,12}$`),
+}
+
+var phoneFormat = regexp.MustCompile(`^[0-9+()\-\s]{6,20}$`)
 
 // Service concentra las reglas de los usuarios. No conoce HTTP. Lo que
 // cambia varias tablas, o puede dejar al sistema sin administrador, corre en
@@ -32,6 +43,9 @@ func NewService(pool *pgxpool.Pool, store *Store) *Service {
 func normalize(in Input, creating bool) (Input, error) {
 	in.Name = strings.TrimSpace(in.Name)
 	in.Email = strings.TrimSpace(in.Email)
+	in.DocumentNumber = strings.ToUpper(strings.TrimSpace(in.DocumentNumber))
+	in.Phone = strings.TrimSpace(in.Phone)
+	in.Position = strings.TrimSpace(in.Position)
 
 	if in.Status == "" {
 		in.Status = StatusActive
@@ -49,9 +63,30 @@ func normalize(in Input, creating bool) (Input, error) {
 		return in, invalidField("status", "El estado no es válido.")
 	case creating && len(in.Password) < minPasswordLength:
 		return in, invalidField("password", "La contraseña debe tener al menos 8 caracteres.")
+	case in.Phone != "" && !phoneFormat.MatchString(in.Phone):
+		return in, invalidField("phone", "El teléfono no es válido.")
 	}
 
-	return in, nil
+	return in, checkDocument(in)
+}
+
+// checkDocument exige que el tipo y el número vayan juntos y que el número
+// tenga el formato de su tipo.
+func checkDocument(in Input) error {
+	switch {
+	case in.DocumentType == "" && in.DocumentNumber == "":
+		return nil
+	case in.DocumentType == "":
+		return invalidField("document_type", "Elige el tipo de documento.")
+	case !in.DocumentType.Valid():
+		return invalidField("document_type", "El tipo de documento no es válido.")
+	case in.DocumentNumber == "":
+		return invalidField("document_number", "Escribe el número de documento.")
+	case !documentFormat[in.DocumentType].MatchString(in.DocumentNumber):
+		return invalidField("document_number", "El número no corresponde al tipo de documento.")
+	}
+
+	return nil
 }
 
 // mapStoreError traduce los errores del store a errores de negocio.
@@ -59,6 +94,8 @@ func mapStoreError(err error) error {
 	switch {
 	case errors.Is(err, errDuplicateEmail):
 		return emailTaken()
+	case errors.Is(err, errDuplicateDoc):
+		return documentTaken()
 	case errors.Is(err, errUnknownRole):
 		return invalidField("role_ids", "Alguno de los roles no existe.")
 	case errors.Is(err, errNotFound):
@@ -108,7 +145,7 @@ func (s *Service) Create(ctx context.Context, in Input) (User, error) {
 
 		var err error
 
-		if id, err = store.Insert(ctx, in.Name, in.Email, hash, in.Status == StatusActive); err != nil {
+		if id, err = store.Insert(ctx, in, hash); err != nil {
 			return mapStoreError(err)
 		}
 
@@ -150,7 +187,7 @@ func (s *Service) Update(ctx context.Context, actorID, id int64, in Input) (User
 			return err
 		}
 
-		if err := store.Update(ctx, id, in.Name, in.Email, in.Status == StatusActive); err != nil {
+		if err := store.Update(ctx, id, in); err != nil {
 			return mapStoreError(err)
 		}
 

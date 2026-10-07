@@ -43,25 +43,38 @@ type listQuery struct {
 	Search    string `form:"search" binding:"omitempty,min=2,max=100"`
 	RoleID    *int64 `form:"role_id" binding:"omitempty,gt=0"`
 	Status    string `form:"status" binding:"omitempty,oneof=active inactive"`
-	Sort      string `form:"sort" binding:"omitempty,oneof=name email status created"`
+	Sort      string `form:"sort" binding:"omitempty,oneof=code name email status created"`
 	Direction string `form:"direction" binding:"omitempty,oneof=asc desc"`
 	Cursor    string `form:"cursor" binding:"omitempty,max=500"`
 }
 
-type createRequest struct {
-	Name     string  `json:"name" binding:"required,max=150"`
-	Email    string  `json:"email" binding:"required,email,max=255"`
-	Password string  `json:"password" binding:"required,min=8,max=100"`
-	Status   string  `json:"status" binding:"omitempty,oneof=active inactive"`
-	RoleIDs  []int64 `json:"role_ids" binding:"omitempty,max=50,dive,gt=0"`
+// profileRequest son los datos de la persona, iguales al crear y al editar.
+type profileRequest struct {
+	Name           string  `json:"name" binding:"required,max=150"`
+	Email          string  `json:"email" binding:"required,email,max=255"`
+	DocumentType   string  `json:"document_type" binding:"omitempty,oneof=dni ce passport"`
+	DocumentNumber string  `json:"document_number" binding:"omitempty,max=20"`
+	Phone          string  `json:"phone" binding:"omitempty,max=20"`
+	Position       string  `json:"position" binding:"omitempty,max=100"`
+	Status         string  `json:"status" binding:"omitempty,oneof=active inactive"`
+	RoleIDs        []int64 `json:"role_ids" binding:"omitempty,max=50,dive,gt=0"`
 }
 
-type updateRequest struct {
-	Name    string  `json:"name" binding:"required,max=150"`
-	Email   string  `json:"email" binding:"required,email,max=255"`
-	Status  string  `json:"status" binding:"omitempty,oneof=active inactive"`
-	RoleIDs []int64 `json:"role_ids" binding:"omitempty,max=50,dive,gt=0"`
+func (r profileRequest) input() Input {
+	return Input{
+		Name: r.Name, Email: r.Email,
+		DocumentType: DocumentType(r.DocumentType), DocumentNumber: r.DocumentNumber,
+		Phone: r.Phone, Position: r.Position,
+		Status: Status(r.Status), RoleIDs: r.RoleIDs,
+	}
 }
+
+type createRequest struct {
+	profileRequest
+	Password string `json:"password" binding:"required,min=8,max=100"`
+}
+
+type updateRequest = profileRequest
 
 type passwordRequest struct {
 	Password string `json:"password" binding:"required,min=8,max=100"`
@@ -75,13 +88,20 @@ type roleResource struct {
 }
 
 type userResource struct {
-	ID          int64          `json:"id"`
-	Name        string         `json:"name"`
-	Email       string         `json:"email"`
-	Status      string         `json:"status"`
-	StatusLabel string         `json:"status_label"`
-	Roles       []roleResource `json:"roles"`
-	CreatedAt   time.Time      `json:"created_at"`
+	ID                int64          `json:"id"`
+	Code              string         `json:"code"`
+	Name              string         `json:"name"`
+	Email             string         `json:"email"`
+	DocumentType      string         `json:"document_type"`
+	DocumentTypeLabel string         `json:"document_type_label"`
+	DocumentNumber    string         `json:"document_number"`
+	Phone             string         `json:"phone"`
+	Position          string         `json:"position"`
+	Status            string         `json:"status"`
+	StatusLabel       string         `json:"status_label"`
+	Roles             []roleResource `json:"roles"`
+	LastLoginAt       *time.Time     `json:"last_login_at"`
+	CreatedAt         time.Time      `json:"created_at"`
 }
 
 func resource(u User) userResource {
@@ -91,9 +111,11 @@ func resource(u User) userResource {
 	}
 
 	return userResource{
-		ID: u.ID, Name: u.Name, Email: u.Email,
+		ID: u.ID, Code: u.Code, Name: u.Name, Email: u.Email,
+		DocumentType: string(u.DocumentType), DocumentTypeLabel: u.DocumentType.Label(),
+		DocumentNumber: u.DocumentNumber, Phone: u.Phone, Position: u.Position,
 		Status: string(u.Status), StatusLabel: u.Status.Label(),
-		Roles: roles, CreatedAt: u.CreatedAt,
+		Roles: roles, LastLoginAt: u.LastLoginAt, CreatedAt: u.CreatedAt,
 	}
 }
 
@@ -150,10 +172,10 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	user, err := h.service.Create(c.Request.Context(), Input{
-		Name: req.Name, Email: req.Email, Password: req.Password,
-		Status: Status(req.Status), RoleIDs: req.RoleIDs,
-	})
+	in := req.input()
+	in.Password = req.Password
+
+	user, err := h.service.Create(c.Request.Context(), in)
 	if err != nil {
 		_ = c.Error(err)
 
@@ -174,9 +196,7 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	user, err := h.service.Update(c.Request.Context(), auth.CurrentUser(c).ID, id, Input{
-		Name: req.Name, Email: req.Email, Status: Status(req.Status), RoleIDs: req.RoleIDs,
-	})
+	user, err := h.service.Update(c.Request.Context(), auth.CurrentUser(c).ID, id, req.input())
 	if err != nil {
 		_ = c.Error(err)
 
@@ -230,8 +250,10 @@ func (h *Handler) Summary(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{
-		"active":   summary.Active,
-		"inactive": summary.Inactive,
+		"active":         summary.Active,
+		"inactive":       summary.Inactive,
+		"administrators": summary.Administrators,
+		"without_roles":  summary.WithoutRoles,
 	}})
 }
 

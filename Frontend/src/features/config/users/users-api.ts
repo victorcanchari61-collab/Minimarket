@@ -6,26 +6,45 @@ export type UserStatus = 'active' | 'inactive';
 
 export type UserRole = { id: number; name: string };
 
+export type DocumentType = 'dni' | 'ce' | 'passport';
+
 export type SystemUser = {
     id: number;
+    /** Automático: USR-0001. */
+    code: string;
     name: string;
     email: string;
+    document_type: DocumentType | '';
+    document_type_label: string;
+    document_number: string;
+    phone: string;
+    position: string;
     status: UserStatus;
     status_label: string;
     roles: UserRole[];
+    last_login_at: string | null;
     created_at: string;
 };
 
 export type UserPayload = {
     name: string;
     email: string;
+    document_type: DocumentType | '';
+    document_number: string;
+    phone: string;
+    position: string;
     status: UserStatus;
     role_ids: number[];
 };
 
 export type NewUserPayload = UserPayload & { password: string };
 
-export type UserSummary = { active: number; inactive: number };
+export type UserSummary = {
+    active: number;
+    inactive: number;
+    administrators: number;
+    without_roles: number;
+};
 
 /**
  * Traduce lo que pide la tabla (búsqueda, orden, filtros) a los parámetros de
@@ -53,9 +72,11 @@ export function fetchUsersPage(
             case 'status':
                 params.status = filter.value;
                 break;
+            case 'code':
             case 'name':
             case 'email':
-                // El servidor busca en nombre y correo a la vez.
+            case 'document':
+                // El servidor busca a la vez en nombre, correo, código y documento.
                 params.search = filter.value.length >= 2 ? filter.value : undefined;
                 break;
         }

@@ -13,6 +13,7 @@ import (
 // Solo estas columnas se pueden ordenar: cada una tiene su índice (columna, id)
 // en la migración, y cualquier otra se rechaza antes de llegar aquí.
 var userSorts = map[string]struct{ expr, cast string }{
+	"code":    {"u.code", "text"},
 	"name":    {"u.name", "text"},
 	"email":   {"u.email", "text"},
 	"status":  {"u.active", "boolean"},
@@ -39,6 +40,8 @@ func (f Filter) sort() string {
 
 func sortValue(u User, sort string) string {
 	switch sort {
+	case "code":
+		return u.Code
 	case "email":
 		return u.Email
 	case "status":
@@ -72,7 +75,9 @@ func (s *Store) List(ctx context.Context, f Filter) (pagination.Page[User], erro
 		n := arg(escapeLike(f.Search))
 		where = append(where, fmt.Sprintf(
 			`(f_unaccent(lower(u.name)) LIKE '%%' || f_unaccent(lower(%[1]s)) || '%%' ESCAPE '\'`+
-				` OR lower(u.email) LIKE '%%' || lower(%[1]s) || '%%' ESCAPE '\')`, n))
+				` OR lower(u.email) LIKE '%%' || lower(%[1]s) || '%%' ESCAPE '\'`+
+				` OR lower(u.code) LIKE '%%' || lower(%[1]s) || '%%' ESCAPE '\'`+
+				` OR u.document_number LIKE '%%' || upper(%[1]s) || '%%' ESCAPE '\')`, n))
 	}
 
 	if f.RoleID != nil {

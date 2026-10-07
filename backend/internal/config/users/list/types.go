@@ -29,37 +29,73 @@ func (s Status) Label() string {
 	}
 }
 
+// DocumentType es el tipo de documento de identidad. Es un enum.
+type DocumentType string
+
+const (
+	DocumentDNI      DocumentType = "dni"
+	DocumentCE       DocumentType = "ce"
+	DocumentPassport DocumentType = "passport"
+)
+
+func (d DocumentType) Valid() bool {
+	return d == DocumentDNI || d == DocumentCE || d == DocumentPassport
+}
+
+func (d DocumentType) Label() string {
+	switch d {
+	case DocumentDNI:
+		return "DNI"
+	case DocumentCE:
+		return "Carné de extranjería"
+	case DocumentPassport:
+		return "Pasaporte"
+	default:
+		return string(d)
+	}
+}
+
 type RoleRef struct {
 	ID   int64
 	Name string
 }
 
 type User struct {
-	ID        int64
-	Name      string
-	Email     string
-	Status    Status
-	Roles     []RoleRef
-	CreatedAt time.Time
+	ID             int64
+	Code           string // automático: USR-0001
+	Name           string
+	Email          string
+	DocumentType   DocumentType // vacío si no tiene documento registrado
+	DocumentNumber string
+	Phone          string
+	Position       string // cargo
+	Status         Status
+	Roles          []RoleRef
+	LastLoginAt    *time.Time
+	CreatedAt      time.Time
 }
 
 // Input es lo que se guarda al crear o editar un usuario. La contraseña solo
 // cuenta al crear; después se cambia con ResetPassword.
 type Input struct {
-	Name     string
-	Email    string
-	Password string
-	Status   Status
-	RoleIDs  []int64
+	Name           string
+	Email          string
+	Password       string
+	DocumentType   DocumentType
+	DocumentNumber string
+	Phone          string
+	Position       string
+	Status         Status
+	RoleIDs        []int64
 }
 
 // Filter son los filtros, el orden y el cursor del listado. Cada campo
 // opcional vacío significa "sin filtro".
 type Filter struct {
-	Search string // nombre (contiene, sin acentos) o correo (contiene)
+	Search string // nombre (contiene, sin acentos), correo, código o documento (contiene)
 	RoleID *int64
 	Status Status
-	Sort   string // name | email | status | created ("" = name)
+	Sort   string // code | name | email | status | created ("" = name)
 	Desc   bool
 	Cursor string
 }
@@ -67,6 +103,8 @@ type Filter struct {
 // Summary son las cifras de la cabecera de la pantalla (los totales no salen
 // del listado, que no cuenta filas).
 type Summary struct {
-	Active   int64
-	Inactive int64
+	Active         int64
+	Inactive       int64
+	Administrators int64 // administradores activos
+	WithoutRoles   int64
 }

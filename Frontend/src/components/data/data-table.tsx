@@ -43,6 +43,9 @@ import { cn } from '@/lib/utils';
 /** Ancho fijo de la columna de acciones: no se redimensiona ni se reparte. */
 const ACTIONS_WIDTH = 140;
 
+/** Ancho de la columna N°. */
+const NUMBER_WIDTH = 56;
+
 /**
  * Lo mínimo que mide una columna sin ancho propio, en píxeles.
  *
@@ -155,6 +158,11 @@ export interface DataTableProps<T> {
      * resto de columnas sean pocas.
      */
     actionsWidth?: number;
+
+    /** Columnas (por `key`) que arrancan ocultas; se muestran desde el botón de columnas. */
+    defaultHidden?: string[];
+    /** Agrega al inicio la columna fija N° con la numeración de las filas (1, 2, 3…). */
+    rowNumbers?: boolean;
     /** Si se pasa, toda la fila (y la tarjeta en móvil) queda clickeable. */
     onRowClick?: (row: T) => void;
     /** Oculta el buscador general y los botones de filtros/columnas, para tablas chicas donde solo estorban. */
@@ -203,6 +211,8 @@ export function DataTable<T>({
     cardIcon: CardIcon,
     actions,
     actionsWidth = ACTIONS_WIDTH,
+    rowNumbers = false,
+    defaultHidden = [],
     onRowClick,
     toolbar = true,
     footer = true,
@@ -213,7 +223,7 @@ export function DataTable<T>({
     // movió: las columnas que la vista agrega o quita después se resuelven al
     // calcular `orderedKeys`, sin sincronizar nada.
     const [order, setOrder] = useState<string[]>([]);
-    const [hidden, setHidden] = useState<string[]>([]);
+    const [hidden, setHidden] = useState<string[]>(defaultHidden);
     const [sort, setSort] = useState<TableQuery['sort']>(null);
     const [search, setSearch] = useState('');
     const [columnSearch, setColumnSearch] = useState<Record<string, string>>(
@@ -454,8 +464,8 @@ export function DataTable<T>({
             0,
         );
 
-        return sum + (actions ? actionsWidth : 0);
-    }, [visible, widths, actions, actionsWidth]);
+        return sum + (actions ? actionsWidth : 0) + (rowNumbers ? NUMBER_WIDTH : 0);
+    }, [visible, widths, actions, actionsWidth, rowNumbers]);
 
     const colTemplate = useMemo(() => {
         const fixed = visible.map(
@@ -467,7 +477,7 @@ export function DataTable<T>({
         );
         const loose = fixed.filter((width) => width === null).length;
 
-        const reserved = `${fixedSum + (actions ? actionsWidth : 0)}px`;
+        const reserved = `${fixedSum + (actions ? actionsWidth : 0) + (rowNumbers ? NUMBER_WIDTH : 0)}px`;
         const auto = `calc((100% - ${reserved}) / ${Math.max(1, loose)})`;
         const cols: (string | number)[] = fixed.map((width) => width ?? auto);
 
@@ -475,14 +485,18 @@ export function DataTable<T>({
             cols.push(actionsWidth);
         }
 
+        if (rowNumbers) {
+            cols.unshift(NUMBER_WIDTH);
+        }
+
         return cols;
-    }, [visible, widths, actions, actionsWidth]);
+    }, [visible, widths, actions, actionsWidth, rowNumbers]);
 
     const closePanel = () => setPanel(null);
     const activeColumnSearches = Object.values(columnSearch).filter((value) =>
         value.trim(),
     ).length;
-    const colSpan = (visible.length || 1) + (actions ? 1 : 0);
+    const colSpan = (visible.length || 1) + (actions ? 1 : 0) + (rowNumbers ? 1 : 0);
     const isEmpty = !loading && !error && rows.length === 0;
 
     return (
@@ -686,6 +700,14 @@ export function DataTable<T>({
 
                         <thead>
                             <tr className="text-white">
+                                {rowNumbers && (
+                                    <th
+                                        scope="col"
+                                        className="sticky top-0 z-10 bg-accent px-3 py-1.5 text-center text-[11px] font-semibold tracking-wider whitespace-nowrap uppercase"
+                                    >
+                                        N°
+                                    </th>
+                                )}
                                 {visible.map((column) => {
                                     const isSorted =
                                         sort?.column === column.key;
@@ -888,6 +910,11 @@ export function DataTable<T>({
                                             className="border-b border-line"
                                             aria-hidden
                                         >
+                                            {rowNumbers && (
+                                                <td className="px-3 py-2.5">
+                                                    <span className="mx-auto block h-3 w-4 rounded-field bg-line" />
+                                                </td>
+                                            )}
                                             {visible.map((column) => (
                                                 <td
                                                     key={column.key}
@@ -912,7 +939,7 @@ export function DataTable<T>({
                             )}
 
                             {!loading &&
-                                rows.map((row) => (
+                                rows.map((row, rowIndex) => (
                                     <tr
                                         key={String(
                                             (row as Record<string, unknown>)[
@@ -944,6 +971,11 @@ export function DataTable<T>({
                                             onRowClick && 'cursor-pointer',
                                         )}
                                     >
+                                        {rowNumbers && (
+                                            <td className="px-3 py-1.5 text-center text-ink-muted tabular-nums">
+                                                {rowIndex + 1}
+                                            </td>
+                                        )}
                                         {visible.map((column) => (
                                             <td
                                                 key={column.key}

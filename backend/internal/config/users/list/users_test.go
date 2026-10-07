@@ -330,3 +330,142 @@ func TestEveryActionNeedsItsPermission(t *testing.T) {
 		}
 	}
 }
+
+func TestCodesAreGeneratedInOrderAndNeverReused(t *testing.T) {
+	router, pool := testutil.Router(t, "local")
+	token := testutil.Login(t, router, pool)
+
+	codeOfAdmin := testutil.Decode(t, testutil.Call(router, "GET", "/api/users?search=admin", token, nil))["data"].([]any)[0].(map[string]any)["code"]
+	if codeOfAdmin != "USR-0001" {
+		t.Fatalf("el primer usuario debía ser USR-0001, fue %v", codeOfAdmin)
+	}
+
+	_, first := create(router, token, newUserBody("uno@minimarket.test"))
+	if got := first["data"].(map[string]any)["code"]; got != "USR-0002" {
+		t.Fatalf("esperaba USR-0002, llegó %v", got)
+	}
+
+	// El código no se puede enviar ni cambiar: lo ignora.
+	body := newUserBody("dos@minimarket.test")
+	body["code"] = "USR-9999"
+
+	_, second := create(router, token, body)
+	if got := second["data"].(map[string]any)["code"]; got != "USR-0003" {
+		t.Fatalf("el código lo genera el sistema, llegó %v", got)
+	}
+
+	// Eliminar al último no libera su código.
+	testutil.Call(router, "DELETE", fmt.Sprintf("/api/users/%d", dataID(second)), token, nil)
+
+	_, third := create(router, token, newUserBody("tres@minimarket.test"))
+	if got := third["data"].(map[string]any)["code"]; got != "USR-0004" {
+		t.Fatalf("un código eliminado no se reutiliza, llegó %v", got)
+	}
+
+	found := testutil.Decode(t, testutil.Call(router, "GET", "/api/users?search=usr-0002", token, nil))["data"].([]any)
+	if len(found) != 1 {
+		t.Fatalf("buscar por código debía dar 1 resultado, dio %d", len(found))
+	}
+}
+
+func TestProfileDataIsValidatedAndDocumentIsUnique(t *testing.T) {
+	router, pool := testutil.Router(t, "local")
+	token := testutil.Login(t, router, pool)
+
+	body := newUserBody("perfil@minimarket.test")
+	body["document_type"] = "dni"
+	body["document_number"] = "12345678"
+	body["phone"] = "987 654 321"
+	body["position"] = "Cajera turno mañana"
+
+	code, created := create(router, token, body)
+	if code != http.StatusCreated {
+		t.Fatalf("esperaba 201, llegó %d: %v", code, created)
+	}
+
+	user := created["data"].(map[string]any)
+	if user["document_number"] != "12345678" || user["document_type_label"] != "DNI" ||
+		user["phone"] != "987 654 321" || user["position"] != "Cajera turno mañana" {
+		t.Fatalf("datos del perfil inesperados: %v", user)
+	}
+
+	for name, change := range map[string]map[string]any{
+		"dni corto":         {"document_type": "dni", "document_number": "1234"},
+		"número sin tipo":   {"document_number": "12345678"},
+		"tipo sin número":   {"document_type": "dni"},
+		"teléfono inválido": {"phone": "abc"},
+		"tipo desconocido":  {"document_type": "licencia", "document_number": "12345678"},
+	} {
+		next := newUserBody(fmt.Sprintf("x%d@minimarket.test", len(name)))
+		for key, value := range change {
+			next[key] = value
+		}
+
+		if code, _ := create(router, token, next); code != http.StatusUnprocessableEntity {
+			t.Errorf("%s: esperaba 422, llegó %d", name, code)
+		}
+	}
+
+	again := newUserBody("otro@minimarket.test")
+	again["document_type"] = "dni"
+	again["document_number"] = "12345678"
+
+	if code, _ := create(router, token, again); code != http.StatusConflict {
+		t.Fatalf("documento repetido esperaba 409, llegó %d", code)
+	}
+
+	// Un usuario sin documento no choca con otro sin documento.
+	for _, email := range []string{"sin1@minimarket.test", "sin2@minimarket.test"} {
+		if code, _ := create(router, token, newUserBody(email)); code != http.StatusCreated {
+			t.Fatalf("sin documento debía crearse: %d", code)
+		}
+	}
+}
+
+func TestLastLoginIsRecorded(t *testing.T) {
+	router, pool := testutil.Router(t, "local")
+	token := testutil.Login(t, router, pool)
+
+	list := testutil.Decode(t, testutil.Call(router, "GET", "/api/users", token, nil))["data"].([]any)
+	if list[0].(map[string]any)["last_login_at"] == nil {
+		t.Fatal("el administrador acaba de entrar: debía tener último ingreso")
+	}
+
+	_, created := create(router, token, newUserBody("nunca@minimarket.test"))
+	if created["data"].(map[string]any)["last_login_at"] != nil {
+		t.Fatal("quien nunca entró no tiene último ingreso")
+	}
+}
+
+func TestSummaryCountsEachIndicator(t *testing.T) {
+	router, pool := testutil.Router(t, "local")
+	token := testutil.Login(t, router, pool)
+
+	cashier := roleID(t, pool, "Cajero")
+
+	create(router, token, newUserBody("con-rol@minimarket.test", cashier))
+	create(router, token, newUserBody("sin-rol@minimarket.test"))
+
+	_, off := create(router, token, newUserBody("apagado@minimarket.test", cashier))
+	testutil.Call(router, "PUT", fmt.Sprintf("/api/users/%d", dataID(off)), token, map[string]any{
+		"name": "Apagado", "email": "apagado@minimarket.test", "status": "inactive", "role_ids": []int64{cashier},
+	})
+
+	_, gone := create(router, token, newUserBody("borrado@minimarket.test"))
+	testutil.Call(router, "DELETE", fmt.Sprintf("/api/users/%d", dataID(gone)), token, nil)
+
+	summary := testutil.Decode(t, testutil.Call(router, "GET", "/api/users/summary", token, nil))["data"].(map[string]any)
+
+	want := map[string]float64{
+		"active":         3, // administrador, con-rol y sin-rol (el borrado no cuenta)
+		"inactive":       1,
+		"administrators": 1,
+		"without_roles":  1, // solo sin-rol
+	}
+
+	for key, value := range want {
+		if summary[key] != value {
+			t.Errorf("%s: esperaba %v, llegó %v", key, value, summary[key])
+		}
+	}
+}
