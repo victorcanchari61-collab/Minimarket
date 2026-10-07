@@ -12,7 +12,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"minimarket/backend/internal/auth"
-	"minimarket/backend/internal/erp/catalog"
+	"minimarket/backend/internal/erp/catalog/products"
+	"minimarket/backend/internal/erp/catalog/units"
 	"minimarket/backend/internal/platform/config"
 	"minimarket/backend/internal/web"
 )
@@ -68,7 +69,8 @@ func New(cfg config.Config, pool *pgxpool.Pool) *gin.Engine {
 	protected.POST("/logout", authHandler.Logout)
 
 	// ERP › Catálogo y maestros. (Los permisos por rol llegan con Configuraciones.)
-	catalog.NewHandler(catalog.NewService(catalog.NewStore(pool))).Routes(protected)
+	products.New(pool).Routes(protected)
+	units.New(pool).Routes(protected)
 
 	return router
 }

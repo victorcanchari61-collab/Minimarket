@@ -11,9 +11,11 @@ import (
 	"log"
 
 	"minimarket/backend/internal/auth"
-	"minimarket/backend/internal/erp/catalog"
+	"minimarket/backend/internal/erp/catalog/products"
 	"minimarket/backend/internal/platform/config"
 	"minimarket/backend/internal/platform/database"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // categoría → productos base y su unidad.
@@ -71,10 +73,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	store := catalog.NewStore(pool)
-	service := catalog.NewService(store)
+	service := products.NewService(products.NewStore(pool))
 
-	existing, err := store.CountProducts(ctx)
+	existing, err := countProducts(ctx, pool)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,7 +88,7 @@ func main() {
 
 	categoryIDs := make([]int64, len(catalogSeed))
 	for i, group := range catalogSeed {
-		if categoryIDs[i], err = store.EnsureCategory(ctx, group.category); err != nil {
+		if categoryIDs[i], err = ensureCategory(ctx, pool, group.category); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -103,24 +104,24 @@ func main() {
 			name = fmt.Sprintf("%s · Lote %d", base[0], variant)
 		}
 
-		unitID, err := store.UnitID(ctx, base[1])
+		unitRef, err := lookupUnitID(ctx, pool, base[1])
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		categoryID := categoryIDs[index%len(catalogSeed)]
 		cents := 200 + (id*53)%4200
-		status := catalog.StatusActive
+		status := products.StatusActive
 
 		if id%11 == 0 {
-			status = catalog.StatusInactive
+			status = products.StatusInactive
 		}
 
-		if _, err := service.Create(ctx, catalog.ProductInput{
+		if _, err := service.Create(ctx, products.ProductInput{
 			SKU:        fmt.Sprintf("SKU-%d", 100000+id*7),
 			Name:       name,
 			CategoryID: &categoryID,
-			UnitID:     unitID,
+			UnitID:     unitRef,
 			Price:      fmt.Sprintf("%d.%02d", cents/100, cents%100),
 			Status:     status,
 		}); err != nil {
@@ -129,4 +130,28 @@ func main() {
 	}
 
 	fmt.Printf("Listo: %d productos en %d categorías.\n", totalProducts, len(catalogSeed))
+}
+
+// Este comando es infraestructura de desarrollo: consulta directo lo que
+// necesita, sin ensuciar el Store del submódulo con métodos que solo él usa.
+
+func countProducts(ctx context.Context, pool *pgxpool.Pool) (n int64, err error) {
+	err = pool.QueryRow(ctx, `SELECT count(*) FROM products WHERE deleted_at IS NULL`).Scan(&n)
+
+	return n, err
+}
+
+func ensureCategory(ctx context.Context, pool *pgxpool.Pool, name string) (id int64, err error) {
+	err = pool.QueryRow(ctx, `
+		INSERT INTO product_categories (name) VALUES ($1)
+		ON CONFLICT (lower(name)) DO UPDATE SET name = product_categories.name
+		RETURNING id`, name).Scan(&id)
+
+	return id, err
+}
+
+func lookupUnitID(ctx context.Context, pool *pgxpool.Pool, name string) (id int64, err error) {
+	err = pool.QueryRow(ctx, `SELECT id FROM units WHERE lower(name) = lower($1)`, name).Scan(&id)
+
+	return id, err
 }

@@ -23,7 +23,7 @@ Reglas complementarias:
 - **Los errores son valores**: una función que falla *devuelve* un `error` y quien la llama lo revisa. No hay excepciones. Los errores de negocio llevan un código estable.
 - **Un solo punto convierte errores en JSON** (middleware `web.Errors`); ningún handler escribe respuestas de error.
 - **Los valores fijos son enums** (tipos con constantes y métodos), nunca cadenas o números sueltos.
-- **Un paquete por funcionalidad**, no por tipo. Nada de carpetas globales `controllers/`, `services/` o `models/`: en Go provocan ciclos de importación.
+- **Un paquete por submódulo del menú**, no por tipo ni por módulo. Un submódulo es una entidad con su propia pantalla y sus propias reglas (Productos, Unidades…): es lo que tiene **una sola razón para cambiar**. Nada de carpetas globales `controllers/`, `services/` o `models/` (en Go provocan ciclos de importación) ni de paquetes por módulo completo, que terminan en archivos de miles de líneas.
 - **Sin ceremonia innecesaria:** no se crean DTOs entre capas ni interfaces "por si acaso". Las estructuras de entrada y salida de un handler existen porque Go no convierte JSON por arte de magia; no son una capa más.
 
 ---
@@ -43,25 +43,31 @@ backend/
     │   ├── config/              variables de entorno
     │   └── database/            pool de PostgreSQL, Executor, InTx, migraciones (migrations/*.sql)
     ├── auth/                    login por token, usuario actual, middleware de sesión
-    ├── erp/
-    │   └── catalog/             ← ejemplo de submódulo (ERP › Catálogo y maestros)
-    │       ├── http.go            handlers y rutas (único archivo que conoce a Gin)
-    │       ├── service.go         reglas de negocio
-    │       ├── store.go           SQL de escritura y consultas simples
-    │       ├── products_query.go  el listado de productos (20 filas, cursor)
-    │       ├── types.go           estructuras y enums
-    │       └── errors.go          errores de negocio del submódulo
+    ├── erp/                     sistema
+    │   └── catalog/             módulo del menú ("Catálogo y maestros"): solo una carpeta que agrupa
+    │       ├── products/        ← submódulo = un paquete (Productos)
+    │       │   ├── http.go        handlers y rutas (único archivo que conoce a Gin)
+    │       │   ├── service.go     reglas de negocio
+    │       │   ├── store.go       SQL de escritura y consultas simples
+    │       │   ├── list_query.go  el listado (20 filas, cursor)
+    │       │   ├── types.go       estructuras y enums
+    │       │   ├── errors.go      errores de negocio del submódulo
+    │       │   └── wire.go        New(db): arma store → servicio → handler
+    │       ├── units/           Unidades y presentaciones
+    │       └── …                partners/, warehouses/, price_lists/ cuando se construyan
     ├── pos/ · scm/ · wms/ · hcm/ · crm/ · bi/   (cada sistema, con sus submódulos)
     ├── server/                  arma el enrutador y conecta los submódulos (composición)
     └── testutil/                utilidades de pruebas con PostgreSQL real
 ```
 
-Organización: **sistema → submódulo**, y cada submódulo es **un paquete plano** de Go.
+Organización: **sistema → módulo → submódulo**. El sistema y el módulo son solo carpetas que agrupan; cada **submódulo** del menú es **un paquete plano** de Go (`internal/erp/catalog/products`). Una entidad que todavía no tiene pantalla propia (las categorías de producto, hoy) vive dentro del submódulo que la usa, hasta que tenga la suya.
 
 ### Propiedad de los datos
 
 - **Cada tabla tiene un solo submódulo dueño.** Solo el dueño la escribe.
-- Un submódulo que necesita datos de otro llama al **servicio del dueño** (o reacciona a un evento); nunca hace SQL sobre tablas ajenas.
+- Un submódulo que necesita datos de otro llama al **servicio del dueño** (o reacciona a un evento); nunca **escribe** en tablas ajenas.
+- Excepción de **solo lectura**: un listado puede hacer `JOIN` con un maestro para mostrar su nombre (la unidad o la categoría de un producto). Es lo que evita el N+1 y se hace únicamente en el `*_query.go` o en las consultas del `store`.
+- Un submódulo **no importa a otro**; si hace falta, la dependencia se declara en `allowedCrossImports` (prueba de arquitectura) con su motivo.
 - Nombres de tablas: maestros compartidos sin prefijo (`products`, `units`, `product_categories`); tablas propias de un sistema con prefijo (`pos_sales`, `wms_locations`, `hcm_employees`).
 
 ### Comunicación entre sistemas
@@ -82,9 +88,16 @@ Organización: **sistema → submódulo**, y cada submódulo es **un paquete pla
 | `store.go` | Todo el SQL de escritura y las consultas simples. Traduce violaciones de restricciones de PostgreSQL a errores propios. | Reglas de negocio |
 | `*_query.go` | Un listado: filtros, orden permitido, cursor y límite de 20. | Escribir datos |
 | `types.go` | Estructuras de dominio y enums. | Lógica con efectos |
+| `wire.go` | `New(db)`: arma store → servicio → handler. Es lo único que necesita quien monta el submódulo (`internal/server`). | Importar Gin |
 | `errors.go` | Los errores de negocio del submódulo (código, mensaje, campo). | — |
 
 Estas reglas se verifican **automáticamente** (sección 10).
+
+### 3.1 Cuando un submódulo crece
+
+- **Un archivo no pasa de 300 líneas.** Si `service.go` o `store.go` se acercan, se parten **por caso de uso**: `create_product.go`, `update_product.go`… cada uno con sus reglas y su SQL, sin crear carpetas nuevas.
+- **Una entidad nueva con pantalla propia es un submódulo nuevo** (otro paquete), no más código dentro del existente.
+- **El `store` solo tiene SQL de su submódulo.** Lo que necesita un comando de desarrollo (como `cmd/seed`) se consulta ahí mismo, sin agregar métodos al `store` que solo ese comando usa.
 
 ---
 
@@ -253,7 +266,7 @@ La base de datos refuerza lo mismo con un `CHECK`. Los enums pueden llevar compo
 | Endpoints | Pruebas con `httptest` contra **PostgreSQL real** (`minimarket_test`, creada si falta). Un candado de PostgreSQL evita que dos paquetes de prueba se pisen. |
 | Listados | 45 filas → páginas de 20, 20 y 5; sin repetidos ni saltos; orden descendente con cursor; filtros; búsqueda sin acentos; cursor de otro orden rechazado. |
 | Reglas | El login (token, contraseña errónea, límite de intentos, cierre de sesión) y el catálogo completo (crear, editar, eliminar, SKU repetido, validaciones, resumen). |
-| **Arquitectura** | `internal/architecture_test.go` revisa los imports y falla si: otro archivo que no sea `http.go` importa Gin o `net/http`; un `http.go` toca `pgx` o la base de datos; lo común (`apperror`, `pagination`, `web`, `platform`) depende de una funcionalidad; o una funcionalidad importa `server`. |
+| **Arquitectura** | `internal/architecture_test.go` revisa los archivos y falla si: otro archivo que no sea `http.go` importa Gin o `net/http`; un `http.go` toca `pgx` o la base de datos; lo común (`apperror`, `pagination`, `web`, `platform`) depende de un submódulo; un submódulo importa a otro sin estar en `allowedCrossImports`; o un archivo pasa de 300 líneas. |
 
 Además: `go vet ./...` y `gofmt` limpios.
 
@@ -261,8 +274,8 @@ Además: `go vet ./...` y `gofmt` limpios.
 
 ## 11. Lista de verificación para un submódulo nuevo
 
-- [ ] Paquete `internal/<sistema>/<submódulo>/` con `http.go`, `service.go`, `store.go`, `types.go` y `errors.go` (y un `*_query.go` por listado).
-- [ ] Rutas registradas en `internal/server/server.go`, dentro del grupo que exige sesión.
+- [ ] Paquete `internal/<sistema>/<módulo>/<submódulo>/` con `http.go`, `service.go`, `store.go`, `types.go`, `errors.go` y `wire.go` (y un `*_query.go` por listado).
+- [ ] Montado en `internal/server/server.go` con `<paquete>.New(pool).Routes(protected)`, dentro del grupo que exige sesión.
 - [ ] Migración SQL numerada con sus índices `(columna, id)` por cada orden permitido.
 - [ ] Listados con máximo 20 filas, cursor, orden con lista blanca y filtros obligatorios si la tabla es grande.
 - [ ] Enums para todo valor cerrado; `CHECK` equivalente en la base.
@@ -277,7 +290,8 @@ Además: `go vet ./...` y `gofmt` limpios.
 |---|---|
 | Núcleo (errores, paginación, validación, límite de intentos, migraciones) | Hecho |
 | Login por token, usuario actual, cierre de sesión | Hecho |
-| ERP › Catálogo › Productos (listado, crear, editar, eliminar, resumen, categorías, unidades) | Hecho |
+| ERP › Catálogo › Productos (listado, crear, editar, eliminar, resumen, categorías) | Hecho |
+| ERP › Catálogo › Unidades y presentaciones (listado de unidades) | Hecho (el CRUD y las presentaciones, pendientes) |
 | Roles, permisos y sucursales (Configuraciones) | Pendiente |
 | ERP › Inventario con kardex | Pendiente (siguiente) |
 | Eventos entre sistemas y trabajos en segundo plano (SUNAT, CRM, BI) | Pendiente |

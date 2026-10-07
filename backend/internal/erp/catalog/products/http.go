@@ -1,4 +1,4 @@
-package catalog
+package products
 
 import (
 	"net/http"
@@ -31,7 +31,6 @@ func (h *Handler) Routes(api *gin.RouterGroup) {
 	catalog.PUT("/products/:id", h.Update)
 	catalog.DELETE("/products/:id", h.Delete)
 	catalog.GET("/categories", h.Categories)
-	catalog.GET("/units", h.Units)
 }
 
 // --- entrada ----------------------------------------------------------------
@@ -222,22 +221,6 @@ func (h *Handler) Categories(c *gin.Context) {
 	data := make([]gin.H, len(categories))
 	for i, category := range categories {
 		data[i] = gin.H{"id": category.ID, "name": category.Name}
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": data})
-}
-
-func (h *Handler) Units(c *gin.Context) {
-	units, err := h.service.Units(c.Request.Context())
-	if err != nil {
-		_ = c.Error(err)
-
-		return
-	}
-
-	data := make([]gin.H, len(units))
-	for i, unit := range units {
-		data[i] = gin.H{"id": unit.ID, "name": unit.Name, "abbreviation": unit.Abbreviation}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": data})

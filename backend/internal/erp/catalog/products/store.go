@@ -1,4 +1,4 @@
-package catalog
+package products
 
 import (
 	"context"
@@ -138,27 +138,6 @@ func (s *Store) Categories(ctx context.Context) ([]Category, error) {
 	return out, rows.Err()
 }
 
-func (s *Store) Units(ctx context.Context) ([]Unit, error) {
-	rows, err := s.db.Query(ctx, `SELECT id, name, abbreviation FROM units ORDER BY name, id`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	out := []Unit{}
-
-	for rows.Next() {
-		var u Unit
-		if err := rows.Scan(&u.ID, &u.Name, &u.Abbreviation); err != nil {
-			return nil, err
-		}
-
-		out = append(out, u)
-	}
-
-	return out, rows.Err()
-}
-
 func (s *Store) Summary(ctx context.Context) (Summary, error) {
 	var sum Summary
 
@@ -170,38 +149,4 @@ func (s *Store) Summary(ctx context.Context) (Summary, error) {
 	).Scan(&sum.Active, &sum.Inactive, &sum.Categories)
 
 	return sum, err
-}
-
-// EnsureCategory crea la categoría si no existe y devuelve su id (la usa el
-// comando de datos de ejemplo).
-func (s *Store) EnsureCategory(ctx context.Context, name string) (int64, error) {
-	var id int64
-
-	err := s.db.QueryRow(ctx, `
-		INSERT INTO product_categories (name) VALUES ($1)
-		ON CONFLICT (lower(name)) DO UPDATE SET name = product_categories.name
-		RETURNING id`, name).Scan(&id)
-
-	return id, err
-}
-
-// UnitID busca una unidad por nombre.
-func (s *Store) UnitID(ctx context.Context, name string) (int64, error) {
-	var id int64
-
-	err := s.db.QueryRow(ctx, `SELECT id FROM units WHERE lower(name) = lower($1)`, name).Scan(&id)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return 0, errUnknownUnit
-	}
-
-	return id, err
-}
-
-// CountProducts dice cuántos productos hay (solo para decidir si sembrar datos).
-func (s *Store) CountProducts(ctx context.Context) (int64, error) {
-	var n int64
-
-	err := s.db.QueryRow(ctx, `SELECT count(*) FROM products WHERE deleted_at IS NULL`).Scan(&n)
-
-	return n, err
 }

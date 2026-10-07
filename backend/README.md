@@ -39,7 +39,8 @@ internal/
   apperror/ pagination/ web/     errores con código · listados de 20 con cursor · piezas HTTP comunes
   platform/{config,database}/    entorno · pool de PostgreSQL, transacciones y migraciones
   auth/                          login por token
-  erp/catalog/                   ejemplo de submódulo: http.go service.go store.go *_query.go types.go errors.go
+  erp/catalog/products/          un submódulo = un paquete: http.go service.go store.go list_query.go types.go errors.go wire.go
+  erp/catalog/units/             otro submódulo (Unidades y presentaciones)
   server/                        enrutador (compone los submódulos)
   testutil/                      pruebas con PostgreSQL real
 ```

@@ -4,6 +4,7 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -11,13 +12,22 @@ import (
 
 const modulePath = "minimarket/backend/internal/"
 
-// Paquetes de funcionalidad: internal/auth y internal/<sistema>/<submódulo>.
+// Un archivo de más de esto casi seguro hace más de una cosa: se parte por
+// caso de uso. (Las pruebas no cuentan.)
+const maxFileLines = 300
+
 var systems = map[string]bool{"erp": true, "pos": true, "scm": true, "wms": true, "hcm": true, "crm": true, "bi": true}
+
+// Un submódulo puede usar a otro solo si queda escrito aquí, con su motivo:
+// "origen" → ["destino", …]. Así cada dependencia entre submódulos es una
+// decisión consciente y revisable, no un import que se coló.
+var allowedCrossImports = map[string][]string{}
 
 type goFile struct {
 	dir     string // relativo a internal/, con /
 	name    string
 	imports []string
+	lines   int
 }
 
 func load(t *testing.T) []goFile {
@@ -35,7 +45,17 @@ func load(t *testing.T) []goFile {
 			return err
 		}
 
-		file := goFile{dir: filepath.ToSlash(filepath.Dir(path)), name: entry.Name()}
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		file := goFile{
+			dir:   filepath.ToSlash(filepath.Dir(path)),
+			name:  entry.Name(),
+			lines: strings.Count(string(content), "\n") + 1,
+		}
+
 		for _, spec := range parsed.Imports {
 			file.imports = append(file.imports, strings.Trim(spec.Path.Value, `"`))
 		}
@@ -51,10 +71,12 @@ func load(t *testing.T) []goFile {
 	return files
 }
 
+// Paquetes de funcionalidad: internal/auth y un submódulo por paquete,
+// internal/<sistema>/<módulo>/<submódulo> (por ejemplo erp/catalog/products).
 func isFeature(dir string) bool {
 	parts := strings.Split(dir, "/")
 
-	return dir == "auth" || (len(parts) == 2 && systems[parts[0]])
+	return dir == "auth" || (len(parts) == 3 && systems[parts[0]])
 }
 
 func importsAny(file goFile, prefixes ...string) string {
@@ -129,6 +151,50 @@ func TestFeaturesDoNotImportTheServer(t *testing.T) {
 
 		if imp := importsAny(file, modulePath+"server"); imp != "" {
 			t.Errorf("%s/%s importa %s", file.dir, file.name, imp)
+		}
+	}
+}
+
+// Un submódulo no importa a otro salvo que esté en allowedCrossImports.
+func TestSubmodulesDoNotImportEachOther(t *testing.T) {
+	for _, file := range load(t) {
+		if !isFeature(file.dir) {
+			continue
+		}
+
+		for _, imp := range file.imports {
+			rest, ok := strings.CutPrefix(imp, modulePath)
+			if !ok {
+				continue
+			}
+
+			rest = strings.TrimSuffix(rest, "/")
+			if !isFeature(rest) || rest == file.dir {
+				continue
+			}
+
+			allowed := false
+
+			for _, target := range allowedCrossImports[file.dir] {
+				if target == rest {
+					allowed = true
+				}
+			}
+
+			if !allowed {
+				t.Errorf("%s/%s importa %s: si es necesario, decláralo en allowedCrossImports con su motivo",
+					file.dir, file.name, imp)
+			}
+		}
+	}
+}
+
+// Los archivos grandes se parten por caso de uso antes de que crezcan sin fin.
+func TestFilesStaySmall(t *testing.T) {
+	for _, file := range load(t) {
+		if file.lines > maxFileLines {
+			t.Errorf("%s/%s tiene %d líneas (máximo %d): pártelo por caso de uso",
+				file.dir, file.name, file.lines, maxFileLines)
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package catalog_test
+package products_test
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"minimarket/backend/internal/erp/catalog"
 	"minimarket/backend/internal/testutil"
 )
 
@@ -258,7 +257,10 @@ func TestSortingDescendingKeepsOrderAcrossPages(t *testing.T) {
 func TestFilters(t *testing.T) {
 	f := newFixture(t)
 
-	categoryID, err := catalog.NewStore(f.pool).EnsureCategory(context.Background(), "Bebidas calientes")
+	var categoryID int64
+
+	err := f.pool.QueryRow(context.Background(),
+		`INSERT INTO product_categories (name) VALUES ($1) RETURNING id`, "Bebidas calientes").Scan(&categoryID)
 	if err != nil {
 		t.Fatal(err)
 	}

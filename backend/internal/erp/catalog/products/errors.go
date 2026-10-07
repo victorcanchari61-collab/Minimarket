@@ -1,4 +1,4 @@
-package catalog
+package products
 
 import (
 	"errors"
@@ -8,10 +8,10 @@ import (
 
 // Errores internos del store: el servicio los traduce a errores de negocio.
 var (
-	errNotFound        = errors.New("catalog: no encontrado")
-	errDuplicateSKU    = errors.New("catalog: sku repetido")
-	errUnknownCategory = errors.New("catalog: categoría inexistente")
-	errUnknownUnit     = errors.New("catalog: unidad inexistente")
+	errNotFound        = errors.New("products: no encontrado")
+	errDuplicateSKU    = errors.New("products: sku repetido")
+	errUnknownCategory = errors.New("products: categoría inexistente")
+	errUnknownUnit     = errors.New("products: unidad inexistente")
 )
 
 func productNotFound() *apperror.Error {

@@ -1,6 +1,6 @@
-// Package catalog es ERP › Catálogo y maestros: productos, categorías y
-// unidades de medida.
-package catalog
+// Package products es ERP › Catálogo y maestros › Productos: el catálogo de
+// productos y sus categorías.
+package products
 
 // ProductStatus es el estado de un producto. Es un enum: nunca se usan cadenas
 // sueltas ("active") fuera de este archivo.
@@ -53,12 +53,6 @@ type ProductInput struct {
 type Category struct {
 	ID   int64
 	Name string
-}
-
-type Unit struct {
-	ID           int64
-	Name         string
-	Abbreviation string
 }
 
 // Summary son las cifras de la cabecera de la pantalla (los totales no salen

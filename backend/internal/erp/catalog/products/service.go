@@ -1,4 +1,4 @@
-package catalog
+package products
 
 import (
 	"context"
@@ -116,10 +116,6 @@ func (s *Service) List(ctx context.Context, f ProductFilter) (pagination.Page[Pr
 
 func (s *Service) Categories(ctx context.Context) ([]Category, error) {
 	return s.store.Categories(ctx)
-}
-
-func (s *Service) Units(ctx context.Context) ([]Unit, error) {
-	return s.store.Units(ctx)
 }
 
 func (s *Service) Summary(ctx context.Context) (Summary, error) {
