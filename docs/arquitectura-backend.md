@@ -247,7 +247,13 @@ La base de datos refuerza lo mismo con un `CHECK`. Los enums pueden llevar compo
 ## 9. Autenticación, permisos y sucursales
 
 - **Hecho:** `POST /api/login` cambia credenciales por un token; solo se guarda su hash SHA-256. `GET /api/user` y `POST /api/logout` exigen el token (`auth.Required`). El login tiene límite de 5 intentos por minuto y no delata qué correos existen. `GET /api/demo-credentials` solo responde con `APP_ENV=local`.
-- **Pendiente (Configuraciones):** roles y permisos con códigos como `inventory.kardex.view`, exigidos por ruta; las habilidades por sistema (`pos:use`, `erp:use`) para filtrar el menú; la **sucursal activa** en `X-Branch-Id` validada contra las sucursales del usuario; y auditoría de quién y cuándo en las escrituras.
+- **Hecho: permisos** (`internal/permission`). Cada acción es un código de cuatro niveles, `sistema.módulo.submódulo.acción` (`erp.catalog.products.edit`), y un permiso se puede dar en **cualquier nivel**: `*` (todo, incluido lo futuro), `erp` (un sistema), `erp.catalog` (un módulo), `erp.catalog.products` (un submódulo) o una acción concreta. Lo que se da arriba cubre todo lo que cuelga de él.
+- **Las acciones son de cada submódulo**, no un CRUD fijo: las declara el catálogo (`catalog_*.go`) con lo que de verdad hace ese submódulo (aprobar, solicitar, programar, anular, enviar, conciliar…). **"Ver" existe en todos y cualquier otra acción lo implica**: no se edita lo que no se ve.
+- **Quién tiene qué:** un usuario hereda los permisos de sus **roles** y además puede recibir permisos **directos** o **denegaciones** directas. Lo denegado le gana a lo permitido; denegar "ver" un submódulo lo bloquea entero. El rol **Administrador** (`roles.code = 'admin'`) lo puede todo y no admite denegaciones. Los permisos son los mismos en todas las sucursales (el acceso a cada sucursal es aparte).
+- **Cómo se exige:** `server` crea un `web.Guard` (`permission.Guard`) y se lo pasa a cada submódulo en `Routes(api, can)`; la ruta pide `can("erp.catalog.products.edit")`. Los submódulos **no importan** `permission` (lo verifica la prueba de arquitectura) y un código que no existe en el catálogo hace fallar el arranque, no da un 403 misterioso. Sin permiso: 403 `FORBIDDEN` con `context.required`.
+- **Para el frontend:** `GET /api/permissions/me` devuelve `{ superuser, permissions: [...] }` (las acciones efectivas, "ver" incluido), con lo que se arma el menú; `GET /api/permissions/catalog` devuelve el árbol con etiquetas para la pantalla de roles y exige `config.roles.permissions.view`. `Frontend/src/lib/navigation.ts` lleva el mismo código en cada módulo y submódulo.
+- **Agregar un submódulo:** declararlo en el catálogo (`internal/permission/catalog_*.go`) y en `navigation.ts` con el mismo código; no hace falta migración. Las tablas son `roles`, `role_permissions`, `user_roles` y `user_permissions` (migración 0005, con los roles iniciales).
+- **Pendiente (Configuraciones):** las pantallas y rutas para crear roles y asignarlos (Roles y permisos, Usuarios); la **sucursal activa** en `X-Branch-Id` validada contra las sucursales del usuario; y auditoría de quién y cuándo en las escrituras.
 
 ---
 
@@ -292,7 +298,8 @@ Además: `go vet ./...` y `gofmt` limpios.
 | Login por token, usuario actual, cierre de sesión | Hecho |
 | ERP › Catálogo › Productos (listado, crear, editar, eliminar, resumen, categorías) | Hecho |
 | ERP › Catálogo › Unidades y presentaciones (listado de unidades) | Hecho (el CRUD y las presentaciones, pendientes) |
-| Roles, permisos y sucursales (Configuraciones) | Pendiente |
-| ERP › Inventario con kardex | Pendiente (siguiente) |
+| Permisos: catálogo, roles, permisos directos y denegaciones, guardia por ruta | Hecho (falta su pantalla de administración) |
+| Empresa y sucursales (Configuraciones) | Pendiente (siguiente) |
+| ERP › Inventario con kardex | Pendiente |
 | Eventos entre sistemas y trabajos en segundo plano (SUNAT, CRM, BI) | Pendiente |
 | Tipo decimal para cálculos de dinero y cantidades | Pendiente (se decide al primer cálculo) |

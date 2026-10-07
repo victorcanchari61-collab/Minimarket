@@ -11,6 +11,7 @@ import { RowAction } from '@/components/ui/row-action';
 import { StatCard } from '@/components/ui/stat-card';
 import { useConfirm } from '@/hooks/use-confirm';
 import { useCursorList } from '@/hooks/use-cursor-list';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useToast } from '@/hooks/use-toast';
 import { ApiError } from '@/lib/api';
 import { formatMoney } from '@/lib/format';
@@ -49,6 +50,10 @@ export default function ProductsScreen() {
     });
     const toast = useToast();
     const { confirm, dialog } = useConfirm();
+    const { can } = usePermissions();
+    const canCreate = can('erp.catalog.products.create');
+    const canEdit = can('erp.catalog.products.edit');
+    const canDelete = can('erp.catalog.products.delete');
 
     const [summary, setSummary] = useState<ProductSummary | null>(null);
     const [categories, setCategories] = useState<Category[]>([]);
@@ -164,10 +169,12 @@ export default function ProductsScreen() {
             title="Productos"
             description="Catálogo y maestros"
             actions={
-                <Button onClick={() => setEditing(null)}>
-                    <Plus className="size-4" aria-hidden />
-                    Nuevo producto
-                </Button>
+                canCreate ? (
+                    <Button onClick={() => setEditing(null)}>
+                        <Plus className="size-4" aria-hidden />
+                        Nuevo producto
+                    </Button>
+                ) : undefined
             }
             stats={
                 <>
@@ -202,24 +209,32 @@ export default function ProductsScreen() {
             searchPlaceholder="Buscar por nombre o SKU…"
             empty="No hay productos que coincidan."
             cardIcon={Package}
-            rowActions={(product) => (
-                <>
-                    <RowAction
-                        label="Editar"
-                        tone="edit"
-                        onClick={() => setEditing(product)}
-                    >
-                        <Pencil className="size-4" aria-hidden />
-                    </RowAction>
-                    <RowAction
-                        label="Eliminar"
-                        tone="danger"
-                        onClick={() => askDelete(product)}
-                    >
-                        <Trash2 className="size-4" aria-hidden />
-                    </RowAction>
-                </>
-            )}
+            rowActions={
+                canEdit || canDelete
+                    ? (product) => (
+                          <>
+                              {canEdit && (
+                                  <RowAction
+                                      label="Editar"
+                                      tone="edit"
+                                      onClick={() => setEditing(product)}
+                                  >
+                                      <Pencil className="size-4" aria-hidden />
+                                  </RowAction>
+                              )}
+                              {canDelete && (
+                                  <RowAction
+                                      label="Eliminar"
+                                      tone="danger"
+                                      onClick={() => askDelete(product)}
+                                  >
+                                      <Trash2 className="size-4" aria-hidden />
+                                  </RowAction>
+                              )}
+                          </>
+                      )
+                    : undefined
+            }
         >
             {editing !== undefined && (
                 <ProductModal

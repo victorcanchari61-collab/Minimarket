@@ -106,6 +106,8 @@ import type { LucideIcon } from 'lucide-react';
 import type { PortalKey } from '@/lib/systems';
 
 export type NavItem = {
+    /** Código del permiso (el del backend): "products", "quick_sale"… */
+    code: string;
     label: string;
     icon: LucideIcon;
 };
@@ -114,9 +116,19 @@ export type NavModule = NavItem & {
     items: NavItem[];
 };
 
-const item = (label: string, icon: LucideIcon): NavItem => ({ label, icon });
+const item = (code: string, label: string, icon: LucideIcon): NavItem => ({
+    code,
+    label,
+    icon,
+});
 
-const mod = (label: string, icon: LucideIcon, items: NavItem[]): NavModule => ({
+const mod = (
+    code: string,
+    label: string,
+    icon: LucideIcon,
+    items: NavItem[],
+): NavModule => ({
+    code,
     label,
     icon,
     items,
@@ -135,269 +147,267 @@ export function slugify(text: string): string {
 /**
  * Módulos y submódulos de cada sistema (según docs/arquitectura-sistemas.md).
  * Es la única fuente de los nombres: el sidebar y la pantalla de sistemas
- * leen de aquí.
+ * leen de aquí. Los códigos son los del catálogo de permisos del backend
+ * (internal/permission): sistema.módulo.submódulo.
  */
 export const SYSTEM_NAV: Record<PortalKey, NavModule[]> = {
     pos: [
-        mod('Ventas', ShoppingCart, [
-            item('Venta rápida', ScanBarcode),
-            item('Venta con cliente', UserRound),
-            item('Venta a crédito', CreditCard),
-            item('Ventas en espera', Clock),
+        mod('sales', 'Ventas', ShoppingCart, [
+            item('quick_sale', 'Venta rápida', ScanBarcode),
+            item('customer_sale', 'Venta con cliente', UserRound),
+            item('credit_sale', 'Venta a crédito', CreditCard),
+            item('held_sales', 'Ventas en espera', Clock),
         ]),
-        mod('Facturación electrónica', FileText, [
-            item('Comprobantes', Receipt),
-            item('Envío a SUNAT', Send),
-            item('Contingencia y reenvío', RefreshCw),
+        mod('billing', 'Facturación electrónica', FileText, [
+            item('documents', 'Comprobantes', Receipt),
+            item('sunat_submission', 'Envío a SUNAT', Send),
+            item('contingency', 'Contingencia y reenvío', RefreshCw),
         ]),
-        mod('Caja', Wallet, [
-            item('Apertura y cierre', DoorOpen),
-            item('Arqueo', Calculator),
-            item('Ingresos y retiros', ArrowLeftRight),
-            item('Cierre por turno', Clock),
+        mod('cash', 'Caja', Wallet, [
+            item('open_close', 'Apertura y cierre', DoorOpen),
+            item('count', 'Arqueo', Calculator),
+            item('movements', 'Ingresos y retiros', ArrowLeftRight),
+            item('shift_close', 'Cierre por turno', Clock),
         ]),
-        mod('Medios de pago', Banknote, [
-            item('Efectivo y tarjetas', CreditCard),
-            item('Yape y Plin', Smartphone),
-            item('Pago mixto', Shuffle),
-            item('Conciliación por medio', Scale),
+        mod('payment_methods', 'Medios de pago', Banknote, [
+            item('cash_cards', 'Efectivo y tarjetas', CreditCard),
+            item('digital_wallets', 'Yape y Plin', Smartphone),
+            item('mixed', 'Pago mixto', Shuffle),
+            item('reconciliation', 'Conciliación por medio', Scale),
         ]),
-        mod('Promociones y precios', Ticket, [
-            item('Descuentos y combos', Percent),
-            item('Precios por sucursal', Store),
-            item('Cupones', Ticket),
+        mod('promotions', 'Promociones y precios', Ticket, [
+            item('discounts', 'Descuentos y combos', Percent),
+            item('branch_prices', 'Precios por sucursal', Store),
+            item('coupons', 'Cupones', Ticket),
         ]),
-        mod('Devoluciones y anulaciones', Undo2, [
-            item('Devolución con nota de crédito', FileMinus),
-            item('Anulación con autorización', ShieldCheck),
+        mod('returns', 'Devoluciones y anulaciones', Undo2, [
+            item('credit_notes', 'Devolución con nota de crédito', FileMinus),
+            item('cancellations', 'Anulación con autorización', ShieldCheck),
         ]),
-        mod('Seguridad y configuración', Settings, [
-            item('Usuarios y roles', Users),
-            item('Terminales y series', Monitor),
-            item('Modo offline', WifiOff),
+        mod('security', 'Seguridad y configuración', Settings, [
+            item('users_roles', 'Usuarios y roles', Users),
+            item('terminals', 'Terminales y series', Monitor),
+            item('offline', 'Modo offline', WifiOff),
         ]),
     ],
 
     erp: [
-        mod('Catálogo y maestros', Boxes, [
-            item('Productos', Package),
-            item('Unidades y presentaciones', Ruler),
-            item('Proveedores y clientes', Handshake),
-            item('Sucursales y almacenes', Warehouse),
-            item('Listas de precios', ListChecks),
+        mod('catalog', 'Catálogo y maestros', Boxes, [
+            item('products', 'Productos', Package),
+            item('units', 'Unidades y presentaciones', Ruler),
+            item('partners', 'Proveedores y clientes', Handshake),
+            item('branches', 'Sucursales y almacenes', Warehouse),
+            item('price_lists', 'Listas de precios', ListChecks),
         ]),
-        mod('Inventario', PackageSearch, [
-            item('Stock por sucursal y lote', Boxes),
-            item('Kardex valorizado', BookOpen),
-            item('Control de vencimientos', CalendarClock),
-            item('Transferencias', ArrowLeftRight),
-            item('Ajustes y mermas', SlidersHorizontal),
-            item('Inventario cíclico', ClipboardCheck),
+        mod('inventory', 'Inventario', PackageSearch, [
+            item('stock', 'Stock por sucursal y lote', Boxes),
+            item('kardex', 'Kardex valorizado', BookOpen),
+            item('expiry', 'Control de vencimientos', CalendarClock),
+            item('transfers', 'Transferencias', ArrowLeftRight),
+            item('adjustments', 'Ajustes y mermas', SlidersHorizontal),
+            item('cycle_count', 'Inventario cíclico', ClipboardCheck),
         ]),
-        mod('Compras', ShoppingBag, [
-            item('Requerimientos', ClipboardList),
-            item('Cotizaciones', FileSearch),
-            item('Órdenes de compra', FileText),
-            item('Recepción de mercadería', PackageOpen),
-            item('Devoluciones a proveedor', Undo2),
-            item('Costeo', Calculator),
+        mod('purchasing', 'Compras', ShoppingBag, [
+            item('requirements', 'Requerimientos', ClipboardList),
+            item('quotes', 'Cotizaciones', FileSearch),
+            item('purchase_orders', 'Órdenes de compra', FileText),
+            item('receipts', 'Recepción de mercadería', PackageOpen),
+            item('supplier_returns', 'Devoluciones a proveedor', Undo2),
+            item('costing', 'Costeo', Calculator),
         ]),
-        mod('Ventas y distribución', Truck, [
-            item('Ventas mayoristas', Store),
-            item('Cotizaciones y pedidos', FileText),
-            item('Guías de remisión', FileCheck),
-            item('Cuentas por cobrar', HandCoins),
+        mod('sales', 'Ventas y distribución', Truck, [
+            item('wholesale', 'Ventas mayoristas', Store),
+            item('quotes_orders', 'Cotizaciones y pedidos', FileText),
+            item('dispatch_guides', 'Guías de remisión', FileCheck),
+            item('receivables', 'Cuentas por cobrar', HandCoins),
         ]),
-        mod('Finanzas y contabilidad', Landmark, [
-            item('Contabilidad general', BookOpen),
-            item('Cuentas por pagar', Receipt),
-            item('Tesorería y bancos', Landmark),
-            item('Conciliación bancaria', Scale),
-            item('Centros de costo', ChartPie),
-            item('Libros electrónicos e impuestos', FileSpreadsheet),
+        mod('finance', 'Finanzas y contabilidad', Landmark, [
+            item('ledger', 'Contabilidad general', BookOpen),
+            item('payables', 'Cuentas por pagar', Receipt),
+            item('treasury', 'Tesorería y bancos', Landmark),
+            item('bank_reconciliation', 'Conciliación bancaria', Scale),
+            item('cost_centers', 'Centros de costo', ChartPie),
+            item('tax_books', 'Libros electrónicos e impuestos', FileSpreadsheet),
         ]),
-        mod('Activos fijos', Building2, [
-            item('Registro de activos', Package),
-            item('Depreciación', TrendingDown),
-            item('Mantenimiento', Wrench),
+        mod('fixed_assets', 'Activos fijos', Building2, [
+            item('asset_register', 'Registro de activos', Package),
+            item('depreciation', 'Depreciación', TrendingDown),
+            item('maintenance', 'Mantenimiento', Wrench),
         ]),
-        mod('Administración del sistema', Settings, [
-            item('Multiempresa y multisucursal', Building2),
-            item('Roles y auditoría', ShieldCheck),
-            item('Integraciones', Plug),
+        mod('administration', 'Administración del sistema', Settings, [
+            item('multicompany', 'Multiempresa y multisucursal', Building2),
+            item('roles_audit', 'Roles y auditoría', ShieldCheck),
+            item('integrations', 'Integraciones', Plug),
         ]),
     ],
 
     scm: [
-        mod('Planeación de la demanda', TrendingUp, [
-            item('Pronóstico por SKU', ChartLine),
-            item('Estacionalidad y eventos', CalendarDays),
-            item('Rotación ABC', ListOrdered),
+        mod('demand', 'Planeación de la demanda', TrendingUp, [
+            item('forecast', 'Pronóstico por SKU', ChartLine),
+            item('seasonality', 'Estacionalidad y eventos', CalendarDays),
+            item('abc', 'Rotación ABC', ListOrdered),
         ]),
-        mod('Reposición', RefreshCw, [
-            item('Stock mínimo y máximo', Gauge),
-            item('Pedido sugerido por tienda', ShoppingCart),
-            item('Alertas de quiebre', BellRing),
+        mod('replenishment', 'Reposición', RefreshCw, [
+            item('min_max', 'Stock mínimo y máximo', Gauge),
+            item('suggested_order', 'Pedido sugerido por tienda', ShoppingCart),
+            item('stockout_alerts', 'Alertas de quiebre', BellRing),
         ]),
-        mod('Abastecimiento', Handshake, [
-            item('Pedido sugerido a proveedores', FileText),
-            item('Lead times', Timer),
-            item('Evaluación de proveedores', Star),
+        mod('sourcing', 'Abastecimiento', Handshake, [
+            item('supplier_orders', 'Pedido sugerido a proveedores', FileText),
+            item('lead_times', 'Lead times', Timer),
+            item('supplier_rating', 'Evaluación de proveedores', Star),
         ]),
-        mod('Distribución y transporte', Route, [
-            item('Rutas y despachos', Map),
-            item('Flota y transportistas', Truck),
-            item('Seguimiento de entregas', MapPin),
-            item('Costos logísticos', Coins),
+        mod('distribution', 'Distribución y transporte', Route, [
+            item('routes', 'Rutas y despachos', Map),
+            item('fleet', 'Flota y transportistas', Truck),
+            item('tracking', 'Seguimiento de entregas', MapPin),
+            item('logistics_costs', 'Costos logísticos', Coins),
         ]),
-        mod('Control de mermas y calidad', TriangleAlert, [
-            item('Mermas por causa', Trash2),
-            item('Productos por vencer', CalendarClock),
-            item('Reclamos a proveedores', MessageSquareWarning),
+        mod('quality', 'Control de mermas y calidad', TriangleAlert, [
+            item('waste_by_cause', 'Mermas por causa', Trash2),
+            item('expiring', 'Productos por vencer', CalendarClock),
+            item('supplier_claims', 'Reclamos a proveedores', MessageSquareWarning),
         ]),
     ],
 
     wms: [
-        mod('Estructura del almacén', Warehouse, [
-            item('Zonas, pasillos y ubicaciones', LayoutGrid),
-            item('Capacidades y tipos', Thermometer),
+        mod('structure', 'Estructura del almacén', Warehouse, [
+            item('locations', 'Zonas, pasillos y ubicaciones', LayoutGrid),
+            item('capacities', 'Capacidades y tipos', Thermometer),
         ]),
-        mod('Recepción', PackageOpen, [
-            item('Citas de recepción', CalendarClock),
-            item('Verificación contra orden de compra', ClipboardCheck),
-            item('Etiquetado de lote y vencimiento', Barcode),
+        mod('receiving', 'Recepción', PackageOpen, [
+            item('appointments', 'Citas de recepción', CalendarClock),
+            item('po_verification', 'Verificación contra orden de compra', ClipboardCheck),
+            item('lot_labeling', 'Etiquetado de lote y vencimiento', Barcode),
         ]),
-        mod('Almacenamiento', Layers, [
-            item('Ubicación sugerida', MapPin),
-            item('Reubicaciones', ArrowRightLeft),
-            item('Stock por ubicación', Boxes),
+        mod('storage', 'Almacenamiento', Layers, [
+            item('suggested_location', 'Ubicación sugerida', MapPin),
+            item('relocations', 'Reubicaciones', ArrowRightLeft),
+            item('location_stock', 'Stock por ubicación', Boxes),
         ]),
-        mod('Picking', ScanBarcode, [
-            item('Por orden, ola o ruta', ListChecks),
-            item('Con handheld o scanner', ScanLine),
-            item('Reposición de zona de picking', RefreshCw),
+        mod('picking', 'Picking', ScanBarcode, [
+            item('orders_waves', 'Por orden, ola o ruta', ListChecks),
+            item('handheld', 'Con handheld o scanner', ScanLine),
+            item('pick_replenishment', 'Reposición de zona de picking', RefreshCw),
         ]),
-        mod('Packing y despacho', Truck, [
-            item('Consolidación por tienda', PackageCheck),
-            item('Guías de remisión', FileText),
-            item('Carga y salida de vehículos', Truck),
+        mod('packing', 'Packing y despacho', Truck, [
+            item('consolidation', 'Consolidación por tienda', PackageCheck),
+            item('dispatch_guides', 'Guías de remisión', FileText),
+            item('vehicle_loading', 'Carga y salida de vehículos', Truck),
         ]),
-        mod('Inventarios', ClipboardCheck, [
-            item('Conteos cíclicos', ClipboardList),
-            item('Conciliación y ajustes', Scale),
+        mod('inventories', 'Inventarios', ClipboardCheck, [
+            item('cycle_counts', 'Conteos cíclicos', ClipboardList),
+            item('reconciliation', 'Conciliación y ajustes', Scale),
         ]),
-        mod('Devoluciones (logística inversa)', Undo2, [
-            item('Retorno desde tiendas', Store),
-            item('Clasificación', ListFilter),
+        mod('reverse_logistics', 'Devoluciones (logística inversa)', Undo2, [
+            item('store_returns', 'Retorno desde tiendas', Store),
+            item('classification', 'Clasificación', ListFilter),
         ]),
     ],
 
     hcm: [
-        mod('Administración de personal', UserRound, [
-            item('Legajo y contratos', FolderOpen),
-            item('Estructura y puestos', Network),
-            item('T-Registro', FileCheck),
+        mod('personnel', 'Administración de personal', UserRound, [
+            item('files', 'Legajo y contratos', FolderOpen),
+            item('structure', 'Estructura y puestos', Network),
+            item('t_registro', 'T-Registro', FileCheck),
         ]),
-        mod('Asistencia y turnos', Clock, [
-            item('Marcación', Fingerprint),
-            item('Turnos por tienda', CalendarDays),
-            item('Horas extra, tardanzas y faltas', Timer),
-            item('Permisos y licencias', CalendarOff),
+        mod('attendance', 'Asistencia y turnos', Clock, [
+            item('clocking', 'Marcación', Fingerprint),
+            item('shifts', 'Turnos por tienda', CalendarDays),
+            item('overtime', 'Horas extra, tardanzas y faltas', Timer),
+            item('leaves', 'Permisos y licencias', CalendarOff),
         ]),
-        mod('Planilla', Banknote, [
-            item('Remuneraciones y descuentos', Calculator),
-            item('Gratificaciones, CTS y vacaciones', Gift),
-            item('PLAME, AFP/ONP y EsSalud', Landmark),
-            item('Boletas de pago', Receipt),
-            item('Liquidaciones', FileCheck),
+        mod('payroll', 'Planilla', Banknote, [
+            item('remuneration', 'Remuneraciones y descuentos', Calculator),
+            item('benefits', 'Gratificaciones, CTS y vacaciones', Gift),
+            item('plame', 'PLAME, AFP/ONP y EsSalud', Landmark),
+            item('payslips', 'Boletas de pago', Receipt),
+            item('settlements', 'Liquidaciones', FileCheck),
         ]),
-        mod('Compensaciones y desempeño', Target, [
-            item('Comisiones y bonos', Award),
-            item('Evaluación de desempeño', ClipboardCheck),
+        mod('compensation', 'Compensaciones y desempeño', Target, [
+            item('commissions', 'Comisiones y bonos', Award),
+            item('performance', 'Evaluación de desempeño', ClipboardCheck),
         ]),
-        mod('Reclutamiento y capacitación', GraduationCap, [
-            item('Vacantes y postulantes', UserPlus),
-            item('Onboarding', Rocket),
-            item('Capacitaciones y certificaciones', Award),
+        mod('recruiting', 'Reclutamiento y capacitación', GraduationCap, [
+            item('vacancies', 'Vacantes y postulantes', UserPlus),
+            item('onboarding', 'Onboarding', Rocket),
+            item('training', 'Capacitaciones y certificaciones', Award),
         ]),
-        mod('Seguridad y salud ocupacional', HardHat, [
-            item('Exámenes médicos', Stethoscope),
-            item('Incidentes y accidentes', TriangleAlert),
-            item('Entrega de EPP y uniformes', Shirt),
+        mod('occupational_health', 'Seguridad y salud ocupacional', HardHat, [
+            item('medical_exams', 'Exámenes médicos', Stethoscope),
+            item('incidents', 'Incidentes y accidentes', TriangleAlert),
+            item('ppe', 'Entrega de EPP y uniformes', Shirt),
         ]),
     ],
 
     crm: [
-        mod('Clientes', Users, [
-            item('Base única de clientes', Database),
-            item('Segmentación', Filter),
-            item('Historial de compras', History),
+        mod('customers', 'Clientes', Users, [
+            item('base', 'Base única de clientes', Database),
+            item('segmentation', 'Segmentación', Filter),
+            item('history', 'Historial de compras', History),
         ]),
-        mod('Programa de puntos', Star, [
-            item('Acumulación y canje', Gift),
-            item('Niveles y beneficios', Medal),
-            item('Identificación por DNI o celular', Smartphone),
+        mod('loyalty', 'Programa de puntos', Star, [
+            item('points', 'Acumulación y canje', Gift),
+            item('tiers', 'Niveles y beneficios', Medal),
+            item('identification', 'Identificación por DNI o celular', Smartphone),
         ]),
-        mod('Campañas', Megaphone, [
-            item('Cupones segmentados', Ticket),
-            item('WhatsApp, SMS y email', MessageCircle),
-            item('Promociones por comportamiento', Sparkles),
+        mod('campaigns', 'Campañas', Megaphone, [
+            item('coupons', 'Cupones segmentados', Ticket),
+            item('messaging', 'WhatsApp, SMS y email', MessageCircle),
+            item('behavior_promos', 'Promociones por comportamiento', Sparkles),
         ]),
-        mod('Atención al cliente', Headset, [
-            item('Reclamos y libro de reclamaciones', BookOpen),
-            item('Encuestas de satisfacción', Smile),
+        mod('service', 'Atención al cliente', Headset, [
+            item('complaints', 'Reclamos y libro de reclamaciones', BookOpen),
+            item('surveys', 'Encuestas de satisfacción', Smile),
         ]),
     ],
 
     bi: [
-        mod('Ventas', TrendingUp, [
-            item('Por tienda', Store),
-            item('Por hora y categoría', Clock),
-            item('Por SKU y cajero', ScanBarcode),
+        mod('sales', 'Ventas', TrendingUp, [
+            item('by_store', 'Por tienda', Store),
+            item('by_hour_category', 'Por hora y categoría', Clock),
+            item('by_sku_cashier', 'Por SKU y cajero', ScanBarcode),
         ]),
-        mod('Inventario', Boxes, [
-            item('Rotación y días de inventario', RefreshCw),
-            item('Quiebres', TriangleAlert),
-            item('Mermas', Trash2),
+        mod('inventory', 'Inventario', Boxes, [
+            item('turnover', 'Rotación y días de inventario', RefreshCw),
+            item('stockouts', 'Quiebres', TriangleAlert),
+            item('waste', 'Mermas', Trash2),
         ]),
-        mod('Rentabilidad', Percent, [
-            item('Margen por producto', Package),
-            item('Margen por sucursal', Store),
+        mod('profitability', 'Rentabilidad', Percent, [
+            item('product_margin', 'Margen por producto', Package),
+            item('branch_margin', 'Margen por sucursal', Store),
         ]),
-        mod('Operaciones', Gauge, [
-            item('Productividad por tienda y turno', Activity),
-            item('Cumplimiento de reposición y despachos', ClipboardCheck),
+        mod('operations', 'Operaciones', Gauge, [
+            item('productivity', 'Productividad por tienda y turno', Activity),
+            item('compliance', 'Cumplimiento de reposición y despachos', ClipboardCheck),
         ]),
-        mod('Gerencial', LayoutDashboard, [
-            item('Dashboards ejecutivos', ChartColumn),
-            item('Alertas y KPIs por sucursal', BellRing),
-            item('Presupuesto vs. real', Scale),
+        mod('executive', 'Gerencial', LayoutDashboard, [
+            item('dashboards', 'Dashboards ejecutivos', ChartColumn),
+            item('alerts', 'Alertas y KPIs por sucursal', BellRing),
+            item('budget', 'Presupuesto vs. real', Scale),
         ]),
     ],
 
     config: [
-        mod('Usuarios', Users, [
-            item('Lista de usuarios', Users),
-            item('Nuevo usuario', UserPlus),
+        mod('users', 'Usuarios', Users, [item('list', 'Lista de usuarios', Users)]),
+        mod('roles', 'Roles y permisos', ShieldCheck, [
+            item('roles', 'Roles', ShieldCheck),
+            item('permissions', 'Permisos por sistema', KeyRound),
         ]),
-        mod('Roles y permisos', ShieldCheck, [
-            item('Roles', ShieldCheck),
-            item('Permisos por sistema', KeyRound),
+        mod('company', 'Empresa y sucursales', Building2, [
+            item('info', 'Datos de la empresa', Building2),
+            item('branches', 'Sucursales', Store),
+            item('warehouses', 'Almacenes', Warehouse),
         ]),
-        mod('Empresa y sucursales', Building2, [
-            item('Datos de la empresa', Building2),
-            item('Sucursales', Store),
-            item('Almacenes', Warehouse),
+        mod('terminals', 'Terminales y series', Monitor, [
+            item('pos_terminals', 'Terminales POS', Monitor),
+            item('series', 'Series de comprobantes', Hash),
         ]),
-        mod('Terminales y series', Monitor, [
-            item('Terminales POS', Monitor),
-            item('Series de comprobantes', Hash),
-        ]),
-        mod('Auditoría', History, [item('Historial de acciones', History)]),
-        mod('Integraciones', Plug, [
-            item('SUNAT', FileCheck),
-            item('Bancos', Landmark),
-            item('APIs y webhooks', Plug),
+        mod('audit', 'Auditoría', History, [item('history', 'Historial de acciones', History)]),
+        mod('integrations', 'Integraciones', Plug, [
+            item('sunat', 'SUNAT', FileCheck),
+            item('banks', 'Bancos', Landmark),
+            item('apis_webhooks', 'APIs y webhooks', Plug),
         ]),
     ],
 };
@@ -420,4 +430,27 @@ export function findNav(
     );
 
     return { module: current ?? null, item: subItem ?? null };
+}
+
+/** Código completo del permiso para ver un submódulo: "erp.catalog.products.view". */
+export function viewCode(system: PortalKey, module: NavModule, subItem: NavItem) {
+    return `${system}.${module.code}.${subItem.code}.view`;
+}
+
+/**
+ * Los módulos y submódulos de un sistema que `canView` deja pasar. Un módulo
+ * sin submódulos visibles no se muestra.
+ */
+export function visibleNav(
+    key: PortalKey,
+    canView: (code: string) => boolean,
+): NavModule[] {
+    return SYSTEM_NAV[key]
+        .map((entry) => ({
+            ...entry,
+            items: entry.items.filter((subItem) =>
+                canView(viewCode(key, entry, subItem)),
+            ),
+        }))
+        .filter((entry) => entry.items.length > 0);
 }

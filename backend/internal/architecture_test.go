@@ -16,7 +16,7 @@ const modulePath = "minimarket/backend/internal/"
 // caso de uso. (Las pruebas no cuentan.)
 const maxFileLines = 300
 
-var systems = map[string]bool{"erp": true, "pos": true, "scm": true, "wms": true, "hcm": true, "crm": true, "bi": true}
+var systems = map[string]bool{"erp": true, "pos": true, "scm": true, "wms": true, "hcm": true, "crm": true, "bi": true, "config": true}
 
 // Un submódulo puede usar a otro solo si queda escrito aquí, con su motivo:
 // "origen" → ["destino", …]. Así cada dependencia entre submódulos es una
@@ -79,6 +79,13 @@ func isFeature(dir string) bool {
 	return dir == "auth" || (len(parts) == 3 && systems[parts[0]])
 }
 
+// permission (el control de acceso) no es un submódulo ni una pieza común: usa
+// a auth para saber quién es el usuario y los submódulos solo reciben de él un
+// web.Guard, sin importarlo. Sigue las mismas reglas de HTTP que una funcionalidad.
+func followsHTTPRules(dir string) bool {
+	return isFeature(dir) || dir == "permission"
+}
+
 func importsAny(file goFile, prefixes ...string) string {
 	for _, imp := range file.imports {
 		for _, prefix := range prefixes {
@@ -95,7 +102,7 @@ func importsAny(file goFile, prefixes ...string) string {
 // no sabe que existe HTTP.
 func TestOnlyHTTPFilesKnowGin(t *testing.T) {
 	for _, file := range load(t) {
-		if !isFeature(file.dir) || file.name == "http.go" || file.name == "middleware.go" {
+		if !followsHTTPRules(file.dir) || file.name == "http.go" || file.name == "middleware.go" {
 			continue
 		}
 
@@ -108,7 +115,7 @@ func TestOnlyHTTPFilesKnowGin(t *testing.T) {
 // El handler no habla con la base de datos: eso es del store y del servicio.
 func TestHandlersDoNotTouchTheDatabase(t *testing.T) {
 	for _, file := range load(t) {
-		if !isFeature(file.dir) || file.name != "http.go" {
+		if !followsHTTPRules(file.dir) || file.name != "http.go" {
 			continue
 		}
 
@@ -145,7 +152,7 @@ func TestSharedCodeDoesNotDependOnFeatures(t *testing.T) {
 // Ninguna funcionalidad arma el enrutador: eso es de internal/server.
 func TestFeaturesDoNotImportTheServer(t *testing.T) {
 	for _, file := range load(t) {
-		if !isFeature(file.dir) {
+		if !followsHTTPRules(file.dir) {
 			continue
 		}
 
@@ -195,6 +202,20 @@ func TestFilesStaySmall(t *testing.T) {
 		if file.lines > maxFileLines {
 			t.Errorf("%s/%s tiene %d líneas (máximo %d): pártelo por caso de uso",
 				file.dir, file.name, file.lines, maxFileLines)
+		}
+	}
+}
+
+// Los submódulos no conocen el control de acceso: reciben un web.Guard. Así
+// agregar o cambiar permisos nunca obliga a tocar el import de un submódulo.
+func TestSubmodulesDoNotImportPermission(t *testing.T) {
+	for _, file := range load(t) {
+		if !isFeature(file.dir) || file.dir == "auth" {
+			continue
+		}
+
+		if imp := importsAny(file, modulePath+"permission"); imp != "" {
+			t.Errorf("%s/%s importa %s: pide el web.Guard por parámetro", file.dir, file.name, imp)
 		}
 	}
 }

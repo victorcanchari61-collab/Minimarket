@@ -12,6 +12,7 @@ import (
 
 	"minimarket/backend/internal/auth"
 	"minimarket/backend/internal/erp/catalog/products"
+	"minimarket/backend/internal/permission"
 	"minimarket/backend/internal/platform/config"
 	"minimarket/backend/internal/platform/database"
 
@@ -69,7 +70,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := auth.NewService(auth.NewStore(pool), 0).EnsureDemoUser(ctx); err != nil {
+	demo, err := auth.NewService(auth.NewStore(pool), 0).EnsureDemoUser(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := permission.New(pool).AssignAdmin(ctx, demo.ID); err != nil {
 		log.Fatal(err)
 	}
 

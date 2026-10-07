@@ -1,27 +1,16 @@
 package server_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"minimarket/backend/internal/auth"
 	"minimarket/backend/internal/testutil"
 )
 
-func seedDemo(t *testing.T, pool *pgxpool.Pool) {
-	t.Helper()
-
-	if err := auth.NewService(auth.NewStore(pool), 0).EnsureDemoUser(context.Background()); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestLoginReturnsTokenAndUser(t *testing.T) {
 	router, pool := testutil.Router(t, "local")
-	seedDemo(t, pool)
+	testutil.SeedDemo(t, pool)
 
 	rec := testutil.Call(router, "POST", "/api/login", "", map[string]string{
 		"email": auth.DemoEmail, "password": auth.DemoPassword,
@@ -48,7 +37,7 @@ func TestLoginReturnsTokenAndUser(t *testing.T) {
 
 func TestLoginRejectsWrongPasswordAndUnknownEmail(t *testing.T) {
 	router, pool := testutil.Router(t, "local")
-	seedDemo(t, pool)
+	testutil.SeedDemo(t, pool)
 
 	for _, creds := range []map[string]string{
 		{"email": auth.DemoEmail, "password": "incorrecta"},
@@ -91,7 +80,7 @@ func TestLoginValidatesInput(t *testing.T) {
 
 func TestUserRequiresValidToken(t *testing.T) {
 	router, pool := testutil.Router(t, "local")
-	seedDemo(t, pool)
+	testutil.SeedDemo(t, pool)
 
 	if rec := testutil.Call(router, "GET", "/api/user", "", nil); rec.Code != http.StatusUnauthorized {
 		t.Fatalf("sin token esperaba 401, llegó %d", rec.Code)
@@ -129,7 +118,7 @@ func TestLogoutRevokesToken(t *testing.T) {
 
 func TestLoginIsRateLimited(t *testing.T) {
 	router, pool := testutil.Router(t, "local")
-	seedDemo(t, pool)
+	testutil.SeedDemo(t, pool)
 
 	var last int
 

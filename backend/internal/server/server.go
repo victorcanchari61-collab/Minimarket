@@ -14,6 +14,7 @@ import (
 	"minimarket/backend/internal/auth"
 	"minimarket/backend/internal/erp/catalog/products"
 	"minimarket/backend/internal/erp/catalog/units"
+	"minimarket/backend/internal/permission"
 	"minimarket/backend/internal/platform/config"
 	"minimarket/backend/internal/web"
 )
@@ -59,7 +60,9 @@ func New(cfg config.Config, pool *pgxpool.Pool) *gin.Engine {
 	})
 
 	authService := auth.NewService(auth.NewStore(pool), cfg.TokenTTL)
-	authHandler := auth.NewHandler(authService, cfg.IsLocal())
+	permissions := permission.New(pool)
+	can := permission.Guard(permissions)
+	authHandler := auth.NewHandler(authService, cfg.IsLocal(), permissions.AssignAdmin)
 
 	api.POST("/login", web.RateLimit(5, time.Minute), authHandler.Login)
 	api.GET("/demo-credentials", authHandler.DemoCredentials)
@@ -68,9 +71,11 @@ func New(cfg config.Config, pool *pgxpool.Pool) *gin.Engine {
 	protected.GET("/user", authHandler.Me)
 	protected.POST("/logout", authHandler.Logout)
 
-	// ERP › Catálogo y maestros. (Los permisos por rol llegan con Configuraciones.)
-	products.New(pool).Routes(protected)
-	units.New(pool).Routes(protected)
+	permission.NewHandler(permissions).Routes(protected, can)
+
+	// ERP › Catálogo y maestros.
+	products.New(pool).Routes(protected, can)
+	units.New(pool).Routes(protected, can)
 
 	return router
 }

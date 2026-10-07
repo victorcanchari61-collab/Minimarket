@@ -5,10 +5,16 @@ import NotificationBell from '@/components/notification-bell';
 import UserMenu from '@/components/user-menu';
 import { useAuthUser } from '@/hooks/use-auth-user';
 import { usePageTitle } from '@/hooks/use-page-title';
+import { usePermissions } from '@/hooks/use-permissions';
+import { visibleNav } from '@/lib/navigation';
 import { BRAND_NAME, PORTAL_ENTRIES, SYSTEM_LIST } from '@/lib/systems';
 
 export default function Sistemas() {
     const { user, signOut } = useAuthUser();
+    const { ready, can, canEnter } = usePermissions();
+    const entries = ready
+        ? PORTAL_ENTRIES.filter((entry) => canEnter(entry.key))
+        : [];
 
     usePageTitle('Sistemas');
 
@@ -46,7 +52,7 @@ export default function Sistemas() {
                     </p>
 
                     <ul className="mt-10 flex w-full flex-wrap justify-center gap-4">
-                        {PORTAL_ENTRIES.map((system, index) => (
+                        {entries.map((system, index) => (
                             <li
                                 key={system.key}
                                 className="sys-rise w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)]"
@@ -86,7 +92,7 @@ export default function Sistemas() {
 
                                     <div className="mt-5 flex items-center justify-between">
                                         <span className="rounded-lg border border-[color-mix(in_oklab,var(--grad-start)_28%,#e5e7eb)] bg-(--surface) px-2.5 py-1 text-xs font-semibold text-(--text)">
-                                            {system.modules.length} módulos
+                                            {visibleNav(system.key, can).length} módulos
                                         </span>
                                         <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-(--sys-600)">
                                             Entrar
@@ -100,6 +106,13 @@ export default function Sistemas() {
                             </li>
                         ))}
                     </ul>
+
+                    {ready && entries.length === 0 && (
+                        <p className="mt-10 max-w-[44ch] text-center text-[15px] text-muted-foreground">
+                            Todavía no tienes acceso a ningún sistema. Pide a un
+                            administrador que te asigne un rol.
+                        </p>
+                    )}
                 </main>
             </div>
         </>

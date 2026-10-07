@@ -2,8 +2,10 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { SCREENS } from '@/features/screens';
 import SystemLayout from '@/layouts/system-layout';
-import { findNav, slugify, SYSTEM_NAV } from '@/lib/navigation';
+import AccessDenied from '@/components/system/access-denied';
+import { findNav, slugify, viewCode, visibleNav } from '@/lib/navigation';
 import { usePageTitle } from '@/hooks/use-page-title';
+import { usePermissions } from '@/hooks/use-permissions';
 import { findPortalEntry, isPortalKey } from '@/lib/systems';
 import type { PortalKey } from '@/lib/systems';
 
@@ -29,6 +31,8 @@ export default function SistemaPage() {
 
 function SistemaView({ system: key, module, item }: Props) {
     const system = findPortalEntry(key);
+    const { ready, can } = usePermissions();
+    const nav = visibleNav(key, can);
     const { module: currentModule, item: currentItem } = findNav(
         key,
         module,
@@ -90,16 +94,28 @@ function SistemaView({ system: key, module, item }: Props) {
           : system.fullName;
     const TitleIcon = currentItem?.icon ?? currentModule?.icon ?? system.icon;
 
+    // null mientras llega la respuesta; después, si el usuario puede abrir esta pantalla.
+    const allowed = !ready
+        ? null
+        : currentItem && currentModule
+          ? can(viewCode(key, currentModule, currentItem))
+          : currentModule
+            ? nav.some((entry) => entry.code === currentModule.code)
+            : nav.length > 0;
+
     const cards = currentItem
         ? []
         : currentModule
-          ? currentModule.items.map((entry) => ({
+          ? (
+                nav.find((entry) => entry.code === currentModule.code)
+                    ?.items ?? []
+            ).map((entry) => ({
                 label: entry.label,
                 icon: entry.icon,
                 href: `${base}/${moduleSlug}/${slugify(entry.label)}`,
                 meta: null as string | null,
             }))
-          : SYSTEM_NAV[key].map((entry) => ({
+          : nav.map((entry) => ({
                 label: entry.label,
                 icon: entry.icon,
                 href: `${base}/${slugify(entry.label)}`,
@@ -114,7 +130,12 @@ function SistemaView({ system: key, module, item }: Props) {
                 activeItem={itemSlug}
                 breadcrumb={breadcrumb}
             >
-                {Screen ? (
+                {allowed === null ? null : !allowed ? (
+                    <AccessDenied
+                        backTo="/sistemas"
+                        backLabel="Volver al inicio"
+                    />
+                ) : Screen ? (
                     <div className="mx-auto max-w-[1400px]">
                         <Screen />
                     </div>

@@ -119,14 +119,13 @@ func (s *Service) Logout(ctx context.Context, tokenID int64) error {
 	return s.store.DeleteToken(ctx, tokenID)
 }
 
-// EnsureDemoUser crea el usuario de prueba si falta.
-func (s *Service) EnsureDemoUser(ctx context.Context) error {
+// EnsureDemoUser crea el usuario de prueba si falta y lo devuelve. Los permisos
+// no son de este paquete: quien lo llama decide qué rol darle.
+func (s *Service) EnsureDemoUser(ctx context.Context) (User, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(DemoPassword), bcryptCost)
 	if err != nil {
-		return err
+		return User{}, err
 	}
 
-	_, err = s.store.EnsureUser(ctx, DemoName, DemoEmail, string(hash))
-
-	return err
+	return s.store.EnsureUser(ctx, DemoName, DemoEmail, string(hash))
 }

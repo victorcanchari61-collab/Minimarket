@@ -20,17 +20,20 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
-// Routes registra las rutas del catálogo en un grupo que ya exige sesión.
-func (h *Handler) Routes(api *gin.RouterGroup) {
+// Routes registra las rutas del catálogo en un grupo que ya exige sesión. Cada
+// una pide el permiso de su acción ("ver" lo incluye cualquier otra).
+func (h *Handler) Routes(api *gin.RouterGroup, can web.Guard) {
 	catalog := api.Group("/catalog")
 
-	catalog.GET("/products", h.List)
-	catalog.POST("/products", h.Create)
-	catalog.GET("/products/summary", h.Summary) // antes de :id
-	catalog.GET("/products/:id", h.Show)
-	catalog.PUT("/products/:id", h.Update)
-	catalog.DELETE("/products/:id", h.Delete)
-	catalog.GET("/categories", h.Categories)
+	view := can("erp.catalog.products.view")
+
+	catalog.GET("/products", view, h.List)
+	catalog.POST("/products", can("erp.catalog.products.create"), h.Create)
+	catalog.GET("/products/summary", view, h.Summary) // antes de :id
+	catalog.GET("/products/:id", view, h.Show)
+	catalog.PUT("/products/:id", can("erp.catalog.products.edit"), h.Update)
+	catalog.DELETE("/products/:id", can("erp.catalog.products.delete"), h.Delete)
+	catalog.GET("/categories", view, h.Categories)
 }
 
 // --- entrada ----------------------------------------------------------------

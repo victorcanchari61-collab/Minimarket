@@ -12,8 +12,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 
 	"minimarket/backend/internal/auth"
+	"minimarket/backend/internal/permission"
 	"minimarket/backend/internal/platform/config"
 	"minimarket/backend/internal/platform/database"
 	"minimarket/backend/internal/server"
@@ -83,6 +85,12 @@ func Pool(t *testing.T) *pgxpool.Pool {
 		t.Fatalf("limpieza: %v", err)
 	}
 
+	// Los roles del sistema (Administrador) son datos de la migración: se
+	// conservan; los demás (iniciales o de otra prueba) se borran.
+	if _, err := pool.Exec(ctx, `DELETE FROM roles WHERE code IS DISTINCT FROM 'admin'`); err != nil {
+		t.Fatalf("limpieza de roles: %v", err)
+	}
+
 	return pool
 }
 
@@ -141,20 +149,65 @@ func Decode(t *testing.T, rec *httptest.ResponseRecorder) map[string]any {
 	return out
 }
 
-// Login crea el usuario de prueba, inicia sesión y devuelve el token.
+// SeedDemo crea el usuario de prueba como Administrador.
+func SeedDemo(t *testing.T, pool *pgxpool.Pool) {
+	t.Helper()
+
+	ctx := context.Background()
+
+	demo, err := auth.NewService(auth.NewStore(pool), 0).EnsureDemoUser(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := permission.New(pool).AssignAdmin(ctx, demo.ID); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// Login crea el usuario de prueba (Administrador), inicia sesión y devuelve el token.
 func Login(t *testing.T, router *gin.Engine, pool *pgxpool.Pool) string {
 	t.Helper()
 
-	service := auth.NewService(auth.NewStore(pool), 0)
-	if err := service.EnsureDemoUser(context.Background()); err != nil {
-		t.Fatal(err)
-	}
+	SeedDemo(t, pool)
 
 	rec := Call(router, "POST", "/api/login", "", map[string]string{
 		"email": auth.DemoEmail, "password": auth.DemoPassword,
 	})
 	if rec.Code != 200 {
 		t.Fatalf("login falló: %d %s", rec.Code, rec.Body.String())
+	}
+
+	return Decode(t, rec)["token"].(string)
+}
+
+// NewUser crea un usuario sin ningún permiso (contraseña DemoPassword) y
+// devuelve su id.
+func NewUser(t *testing.T, pool *pgxpool.Pool, email string) int64 {
+	t.Helper()
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(auth.DemoPassword), bcrypt.MinCost)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	user, err := auth.NewStore(pool).EnsureUser(context.Background(), "Usuario "+email, email, string(hash))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return user.ID
+}
+
+// LoginAs inicia sesión con un usuario creado por NewUser y devuelve el token.
+func LoginAs(t *testing.T, router *gin.Engine, email string) string {
+	t.Helper()
+
+	rec := Call(router, "POST", "/api/login", "", map[string]string{
+		"email": email, "password": auth.DemoPassword,
+	})
+	if rec.Code != 200 {
+		t.Fatalf("login de %s falló: %d %s", email, rec.Code, rec.Body.String())
 	}
 
 	return Decode(t, rec)["token"].(string)

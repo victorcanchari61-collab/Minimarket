@@ -6,7 +6,8 @@ import SystemSidebar from '@/components/system/system-sidebar';
 import { IconGradientDefs } from '@/components/system/themed-icon';
 import UserMenu from '@/components/user-menu';
 import { useAuthUser } from '@/hooks/use-auth-user';
-import { SYSTEM_NAV } from '@/lib/navigation';
+import { usePermissions } from '@/hooks/use-permissions';
+import { visibleNav } from '@/lib/navigation';
 import type { PortalEntry } from '@/lib/systems';
 
 const COLLAPSED_KEY = 'minimarket.sidebar.collapsed';
@@ -35,6 +36,7 @@ export default function SystemLayout({
     children,
 }: SystemLayoutProps) {
     const { user, signOut } = useAuthUser();
+    const { ready, can } = usePermissions();
     const [collapsed, setCollapsed] = useState(readCollapsed);
     const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -66,7 +68,7 @@ export default function SystemLayout({
         });
     };
 
-    const nav = SYSTEM_NAV[system.key];
+    const nav = ready ? visibleNav(system.key, can) : [];
 
     return (
         <div

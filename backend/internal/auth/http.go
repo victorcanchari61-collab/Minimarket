@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,10 +14,12 @@ import (
 type Handler struct {
 	service *Service
 	isLocal bool
+	// onDemoUser deja listo al usuario de prueba (por ejemplo, con su rol).
+	onDemoUser func(ctx context.Context, userID int64) error
 }
 
-func NewHandler(service *Service, isLocal bool) *Handler {
-	return &Handler{service: service, isLocal: isLocal}
+func NewHandler(service *Service, isLocal bool, onDemoUser func(ctx context.Context, userID int64) error) *Handler {
+	return &Handler{service: service, isLocal: isLocal, onDemoUser: onDemoUser}
 }
 
 type loginRequest struct {
@@ -70,7 +73,12 @@ func (h *Handler) DemoCredentials(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.EnsureDemoUser(c.Request.Context()); err != nil {
+	user, err := h.service.EnsureDemoUser(c.Request.Context())
+	if err == nil {
+		err = h.onDemoUser(c.Request.Context(), user.ID)
+	}
+
+	if err != nil {
 		_ = c.Error(err)
 
 		return

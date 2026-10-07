@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Check, ChevronDown, House, LogOut } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
+import { usePermissions } from '@/hooks/use-permissions';
 import type { PortalEntry, PortalKey } from '@/lib/systems';
 import { SETTINGS, SYSTEM_LIST } from '@/lib/systems';
 import { cn } from '@/lib/utils';
@@ -38,6 +39,7 @@ export default function UserMenu({
     const [open, setOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
     const menuId = useId();
+    const { ready, canEnter } = usePermissions();
 
     useEffect(() => {
         if (!open) {
@@ -136,7 +138,7 @@ export default function UserMenu({
                     <p className="px-3 pt-3 pb-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
                         Sistemas
                     </p>
-                    {SYSTEM_LIST.map((entry) => (
+                    {SYSTEM_LIST.filter((entry) => ready && canEnter(entry.key)).map((entry) => (
                         <SystemLink
                             key={entry.key}
                             entry={entry}
@@ -145,12 +147,16 @@ export default function UserMenu({
                         />
                     ))}
 
-                    <div className="my-1.5 border-t border-[#e5e7eb]" />
-                    <SystemLink
-                        entry={SETTINGS}
-                        current={SETTINGS.key === currentKey}
-                        onNavigate={() => setOpen(false)}
-                    />
+                    {ready && canEnter(SETTINGS.key) && (
+                        <>
+                            <div className="my-1.5 border-t border-[#e5e7eb]" />
+                            <SystemLink
+                                entry={SETTINGS}
+                                current={SETTINGS.key === currentKey}
+                                onNavigate={() => setOpen(false)}
+                            />
+                        </>
+                    )}
 
                     <div className="my-1.5 border-t border-[#e5e7eb]" />
                     <button
