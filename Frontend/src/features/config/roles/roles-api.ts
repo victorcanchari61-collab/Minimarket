@@ -34,11 +34,14 @@ export function fetchRolesPage(
     return getPage<Role>('/roles', {
         // El servidor exige 2 caracteres como mínimo para buscar.
         search: search.length >= 2 ? search : undefined,
+        fields: query.fields.join(','),
         sort: query.sort?.column,
         direction: query.sort?.direction,
         cursor,
     });
 }
+
+export const fetchRoleDetail = (id: number) => apiGet<Role>(`/roles/${id}`);
 
 export const fetchPermissionCatalog = () =>
     apiGet<CatalogNode[]>('/permissions/catalog');

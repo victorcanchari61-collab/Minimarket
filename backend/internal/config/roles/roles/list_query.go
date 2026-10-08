@@ -88,7 +88,7 @@ func (s *Store) List(ctx context.Context, f Filter) (pagination.Page[Role], erro
 			" ("+arg(cursor.Value)+"::"+spec.cast+", "+arg(cursor.ID)+")")
 	}
 
-	query := roleSelect +
+	query := roleSelectSQL(!f.SkipPermissions, !f.SkipUserCount) +
 		" WHERE " + strings.Join(where, " AND ") +
 		" ORDER BY " + spec.expr + " " + direction + ", r.id " + direction +
 		" LIMIT " + arg(pagination.Limit())

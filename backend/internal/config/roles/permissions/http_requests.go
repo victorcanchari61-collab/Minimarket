@@ -75,6 +75,11 @@ func (h *Handler) Requests(c *gin.Context) {
 		return
 	}
 
+	fields, ok := web.BindFields[requestResource](c)
+	if !ok {
+		return
+	}
+
 	page, err := h.service.Requests(c.Request.Context(), RequestStatus(q.Status), q.Cursor)
 	if err != nil {
 		_ = c.Error(err)
@@ -82,12 +87,12 @@ func (h *Handler) Requests(c *gin.Context) {
 		return
 	}
 
-	data := make([]requestResource, len(page.Data))
+	data := make([]any, len(page.Data))
 	for i, request := range page.Data {
-		data[i] = requestOf(request)
+		data[i] = web.Pick(requestOf(request), fields)
 	}
 
-	c.JSON(http.StatusOK, pagination.Page[requestResource]{Data: data, Meta: page.Meta})
+	c.JSON(http.StatusOK, pagination.Page[any]{Data: data, Meta: page.Meta})
 }
 
 // GET /api/access/requests/summary — cuántas esperan respuesta (la cifra de la pestaña).

@@ -78,8 +78,15 @@ func (h *Handler) Page(c *gin.Context) {
 		return
 	}
 
+	fields, ok := web.BindFields[managedResource](c)
+	if !ok {
+		return
+	}
+
 	filter := Filter{
 		Search: q.Search, Kind: Kind(q.Kind), Sort: q.Sort, Desc: q.Direction == "desc", Cursor: q.Cursor,
+		SkipWarehouses: !fields.Wants("warehouses"),
+		SkipUsers:      !fields.Wants("users"),
 	}
 
 	if q.Status != "" {
@@ -94,12 +101,12 @@ func (h *Handler) Page(c *gin.Context) {
 		return
 	}
 
-	data := make([]managedResource, len(page.Data))
+	data := make([]any, len(page.Data))
 	for i, b := range page.Data {
-		data[i] = managed(b)
+		data[i] = web.Pick(managed(b), fields)
 	}
 
-	c.JSON(http.StatusOK, pagination.Page[managedResource]{Data: data, Meta: page.Meta})
+	c.JSON(http.StatusOK, pagination.Page[any]{Data: data, Meta: page.Meta})
 }
 
 func (h *Handler) Show(c *gin.Context) {

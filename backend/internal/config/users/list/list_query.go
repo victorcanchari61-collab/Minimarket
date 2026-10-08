@@ -111,7 +111,7 @@ func (s *Store) List(ctx context.Context, f Filter) (pagination.Page[User], erro
 			" ("+arg(cursor.Value)+"::"+spec.cast+", "+arg(cursor.ID)+")")
 	}
 
-	query := userSelect +
+	query := userSelectSQL(!f.SkipRoles, !f.SkipBranches) +
 		" WHERE " + strings.Join(where, " AND ") +
 		" ORDER BY " + spec.expr + " " + direction + ", u.id " + direction +
 		" LIMIT " + arg(pagination.Limit())

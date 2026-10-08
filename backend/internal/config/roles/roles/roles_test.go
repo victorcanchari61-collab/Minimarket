@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -243,5 +245,63 @@ func TestEveryActionNeedsItsPermissionAndCatalogIsOpenToRoleManagers(t *testing.
 		if code, _ := send(router, request.method, request.path, viewer, map[string]any{}); code != http.StatusForbidden {
 			t.Errorf("%s %s sin permiso esperaba 403, llegó %d", request.method, request.path, code)
 		}
+	}
+}
+
+// fieldKeys devuelve los campos de una fila como "a,b,c" (ordenados).
+func fieldKeys(item any) string {
+	keys := make([]string, 0)
+	for key := range item.(map[string]any) {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	return strings.Join(keys, ",")
+}
+
+func TestListOnlyReturnsTheRequestedFields(t *testing.T) {
+	router, pool := testutil.Router(t, "local")
+	token := testutil.Login(t, router, pool)
+
+	_, created := send(router, "POST", "/api/roles", token, roleBody("Vendedor", "pos.sales"))
+
+	userID := testutil.NewUser(t, pool, "tiene-rol@minimarket.test")
+	if _, err := pool.Exec(context.Background(), `INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2)`, userID, idOf(created)); err != nil {
+		t.Fatal(err)
+	}
+
+	rows := func(query string) []any {
+		_, body := send(router, "GET", "/api/roles"+query, token, nil)
+
+		return body["data"].([]any)
+	}
+
+	for _, item := range rows("?fields=name") {
+		if got := fieldKeys(item); got != "id,name" {
+			t.Fatalf("solo nombre e id: %s", got)
+		}
+	}
+
+	for _, item := range rows("?fields=name,user_count") {
+		row := item.(map[string]any)
+		if fieldKeys(item) != "id,name,user_count" {
+			t.Fatalf("nombre, cuenta e id: %s", fieldKeys(item))
+		}
+
+		if row["name"] == "Vendedor" && row["user_count"] != float64(1) {
+			t.Fatalf("pidiendo la cuenta debe venir calculada: %v", row)
+		}
+	}
+
+	for _, item := range rows("?fields=name,permissions") {
+		row := item.(map[string]any)
+		if row["name"] == "Vendedor" && len(row["permissions"].([]any)) != 1 {
+			t.Fatalf("pidiendo permisos deben venir calculados: %v", row)
+		}
+	}
+
+	if code, _ := send(router, "GET", "/api/roles?fields=secret", token, nil); code != http.StatusUnprocessableEntity {
+		t.Fatalf("un campo que no existe esperaba 422, llegó %d", code)
 	}
 }

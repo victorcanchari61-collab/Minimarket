@@ -69,6 +69,12 @@ export const savePersonAccess = (id: number, allow: string[], deny: string[]) =>
 /** Lo que se ve en la pestaña Solicitudes: un estado, o todas. */
 export type RequestFilter = RequestStatus | 'all';
 
+/** Las columnas de la tabla de solicitudes (no se pueden ocultar): solo se piden esas. */
+const REQUEST_FIELDS = [
+    'user_name', 'user_code', 'user_email', 'permission', 'reason',
+    'created_at', 'status', 'status_label', 'decided_by_name', 'decided_at',
+].join(',');
+
 /** GET /api/access/requests: 20 por petición, de la más reciente a la más antigua. */
 export function fetchRequestsPage(
     filter: RequestFilter,
@@ -76,6 +82,7 @@ export function fetchRequestsPage(
 ): Promise<Page<AccessRequest>> {
     return getPage<AccessRequest>('/access/requests', {
         status: filter === 'all' ? undefined : filter,
+        fields: REQUEST_FIELDS,
         cursor,
     });
 }

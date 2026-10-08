@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -419,4 +420,46 @@ func TestEverythingNeedsItsPermission(t *testing.T) {
 			t.Errorf("%s %s sin 'asignar' esperaba 403, llegó %d", request.method, request.path, code)
 		}
 	}
+}
+
+func TestRequestsListOnlyReturnsTheRequestedFields(t *testing.T) {
+	router, pool := testutil.Router(t, "local")
+	admin := testutil.Login(t, router, pool)
+
+	testutil.NewUser(t, pool, "campos@minimarket.test")
+	asker := testutil.LoginAs(t, router, "campos@minimarket.test")
+	send(router, "POST", "/api/access/requests", asker, map[string]any{"permission": "pos.cash.open_close.open", "reason": "Necesito abrir caja"})
+
+	_, list := send(router, "GET", "/api/access/requests?fields=permission,status", admin, nil)
+	for _, item := range list["data"].([]any) {
+		if got := fieldKeys(item); got != "id,permission,status" {
+			t.Fatalf("permiso, estado e id: %s", got)
+		}
+	}
+
+	if code, _ := send(router, "GET", "/api/access/requests?fields=nope", admin, nil); code != http.StatusUnprocessableEntity {
+		t.Fatalf("un campo que no existe esperaba 422, llegó %d", code)
+	}
+}
+
+// fieldKeys devuelve los campos de una fila como "a,b,c" (ordenados). Este
+// archivo ya tiene una función llamada strings, así que no usa el paquete.
+func fieldKeys(item any) string {
+	keys := make([]string, 0)
+	for key := range item.(map[string]any) {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	out := ""
+	for i, key := range keys {
+		if i > 0 {
+			out += ","
+		}
+
+		out += key
+	}
+
+	return out
 }

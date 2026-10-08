@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -242,5 +244,46 @@ func TestEveryActionNeedsItsPermission(t *testing.T) {
 		if code, _ := send(router, request.method, request.path, viewer, map[string]any{}); code != http.StatusForbidden {
 			t.Errorf("%s %s sin permiso esperaba 403, llegó %d", request.method, request.path, code)
 		}
+	}
+}
+
+// fieldKeys devuelve los campos de una fila como "a,b,c" (ordenados).
+func fieldKeys(item any) string {
+	keys := make([]string, 0)
+	for key := range item.(map[string]any) {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	return strings.Join(keys, ",")
+}
+
+func TestListOnlyReturnsTheRequestedFields(t *testing.T) {
+	router, pool := testutil.Router(t, "local")
+	token := testutil.Login(t, router, pool)
+
+	_, created := send(router, "POST", "/api/branches", token, branchBody("C01", "Con almacén"))
+	exec(t, pool, `INSERT INTO warehouses (branch_id, code, name) VALUES ($1, 'ALM-01', 'Principal')`, idOf(created))
+
+	rows := func(query string) []any {
+		_, body := send(router, "GET", "/api/branches"+query, token, nil)
+
+		return body["data"].([]any)
+	}
+
+	for _, item := range rows("?fields=code,name") {
+		if got := fieldKeys(item); got != "code,id,name" {
+			t.Fatalf("código, nombre e id: %s", got)
+		}
+	}
+
+	row := rows("?fields=name,warehouses,users")[0].(map[string]any)
+	if fieldKeys(row) != "id,name,users,warehouses" || row["warehouses"] != float64(1) || row["users"] != float64(0) {
+		t.Fatalf("pidiendo las cuentas deben venir calculadas: %v", row)
+	}
+
+	if code, _ := send(router, "GET", "/api/branches?fields=nope", token, nil); code != http.StatusUnprocessableEntity {
+		t.Fatalf("un campo que no existe esperaba 422, llegó %d", code)
 	}
 }

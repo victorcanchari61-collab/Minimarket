@@ -62,6 +62,9 @@ type Filter struct {
 	Sort   string // code | name | kind | status | created ("" = name)
 	Desc   bool
 	Cursor string
+	// Lo que la tabla no muestra no se calcula.
+	SkipWarehouses bool
+	SkipUsers      bool
 }
 
 // Summary son las cifras de la cabecera de la pantalla.

@@ -25,23 +25,57 @@ func NewStore(db database.Executor) *Store {
 }
 
 // El código 'admin' es el del rol Administrador (ver la migración de permisos).
-const userSelect = `
+const userHead = `
 	SELECT u.id, u.code, u.name, u.email, u.active, u.created_at, u.last_login_at,
 	       COALESCE(u.document_type, ''), COALESCE(u.document_number, ''),
-	       COALESCE(u.phone, ''), COALESCE(u.position, ''), u.all_branches,
+	       COALESCE(u.phone, ''), COALESCE(u.position, ''), u.all_branches,`
+
+const userBranches = `
 	       COALESCE((SELECT array_agg(b.id ORDER BY b.name, b.id)
 	                 FROM user_branches ub JOIN branches b ON b.id = ub.branch_id
 	                 WHERE ub.user_id = u.id), '{}'::bigint[]),
 	       COALESCE((SELECT array_agg(b.name ORDER BY b.name, b.id)
 	                 FROM user_branches ub JOIN branches b ON b.id = ub.branch_id
-	                 WHERE ub.user_id = u.id), '{}'::text[]),
+	                 WHERE ub.user_id = u.id), '{}'::text[]),`
+
+const userRoles = `
 	       COALESCE((SELECT array_agg(r.id ORDER BY r.name, r.id)
 	                 FROM user_roles ur JOIN roles r ON r.id = ur.role_id
 	                 WHERE ur.user_id = u.id), '{}'::bigint[]),
 	       COALESCE((SELECT array_agg(r.name ORDER BY r.name, r.id)
 	                 FROM user_roles ur JOIN roles r ON r.id = ur.role_id
-	                 WHERE ur.user_id = u.id), '{}'::text[])
-	FROM users u`
+	                 WHERE ur.user_id = u.id), '{}'::text[])`
+
+// Las mismas columnas, pero con listas vacías en lugar de las subconsultas que
+// no se pidieron: el listado solo calcula lo que la tabla muestra.
+const (
+	noUserBranches = `
+	       '{}'::bigint[], '{}'::text[],`
+	noUserRoles = `
+	       '{}'::bigint[], '{}'::text[]`
+)
+
+// userSelectSQL arma el SELECT con o sin los roles y las sucursales de cada usuario.
+func userSelectSQL(roles, branches bool) string {
+	sql := userHead
+
+	if branches {
+		sql += userBranches
+	} else {
+		sql += noUserBranches
+	}
+
+	if roles {
+		sql += userRoles
+	} else {
+		sql += noUserRoles
+	}
+
+	return sql + "\n\tFROM users u"
+}
+
+// userSelect trae todo: para un solo usuario.
+var userSelect = userSelectSQL(true, true)
 
 func scanUser(row pgx.Row) (User, error) {
 	var (

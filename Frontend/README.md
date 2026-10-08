@@ -21,9 +21,9 @@ layouts/      auth (panel de sistemas + formulario) y system (sidebar + barra de
 features/     pantallas por sistema/módulo (erp/catalog/products…); screens.ts las enlaza a su ruta
 components/
   ui/         primitivas: Button, Input, Modal, Badge, Toast, Tabs, StatCard…
-  data/       compuestos: DataTable (20 filas + scroll infinito), Dropdown, DateRangePicker, selectores
+  data/       compuestos: DataTable (20 filas por página, Anterior / Siguiente, pide solo las columnas visibles), Dropdown, DateRangePicker, selectores
   system/     sidebar y utilidades de icono por sistema
-hooks/        use-cursor-list, use-infinite-scroll, use-confirm, use-toast…
+hooks/        use-paged-list (tablas), use-cursor-list y use-infinite-scroll (selectores en modal), use-confirm, use-toast…
 lib/          api (token Bearer), systems y navigation (datos de sistemas), format, utils
 ```
 

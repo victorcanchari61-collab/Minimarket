@@ -18,7 +18,7 @@ import { RowAction } from '@/components/ui/row-action';
 import { ShareCard } from '@/components/ui/share-card';
 import { useAuthUser } from '@/hooks/use-auth-user';
 import { useConfirm } from '@/hooks/use-confirm';
-import { useCursorList } from '@/hooks/use-cursor-list';
+import { usePagedList } from '@/hooks/use-paged-list';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/format';
@@ -28,6 +28,7 @@ import {
     deleteUser,
     fetchBranchOptions,
     fetchRoles,
+    fetchUserDetail,
     fetchUserSummary,
     fetchUsersPage,
 } from '@/features/config/users/users-api';
@@ -49,7 +50,7 @@ const messageOf = (error: unknown) =>
 /** Configuraciones › Usuarios › Lista de usuarios, con datos reales de la API. */
 export default function UsersScreen() {
     const [query, setQuery] = useState<TableQuery | null>(null);
-    const list = useCursorList<SystemUser, TableQuery>({
+    const list = usePagedList<SystemUser, TableQuery>({
         query,
         fetchPage: fetchUsersPage,
     });
@@ -90,6 +91,7 @@ export default function UsersScreen() {
         () => [
             {
                 key: 'code',
+                fields: ['code'],
                 label: 'Código',
                 sortable: true,
                 width: 100,
@@ -101,6 +103,7 @@ export default function UsersScreen() {
             },
             {
                 key: 'name',
+                fields: ['name'],
                 label: 'Nombre',
                 sortable: true,
                 width: 220,
@@ -110,6 +113,7 @@ export default function UsersScreen() {
             },
             {
                 key: 'document',
+                fields: ['document_type_label', 'document_number'],
                 label: 'Documento',
                 filterable: false,
                 width: 150,
@@ -120,12 +124,14 @@ export default function UsersScreen() {
             },
             {
                 key: 'email',
+                fields: ['email'],
                 label: 'Correo',
                 sortable: true,
                 width: 240,
             },
             {
                 key: 'phone',
+                fields: ['phone'],
                 label: 'Teléfono',
                 searchable: false,
                 filterable: false,
@@ -134,6 +140,7 @@ export default function UsersScreen() {
             },
             {
                 key: 'position',
+                fields: ['position'],
                 label: 'Cargo',
                 searchable: false,
                 filterable: false,
@@ -142,6 +149,7 @@ export default function UsersScreen() {
             },
             {
                 key: 'roles',
+                fields: ['roles'],
                 label: 'Roles',
                 searchable: false,
                 filterType: 'select',
@@ -165,6 +173,7 @@ export default function UsersScreen() {
             },
             {
                 key: 'branches',
+                fields: ['all_branches', 'branches'],
                 label: 'Sucursales',
                 searchable: false,
                 filterable: false,
@@ -191,6 +200,7 @@ export default function UsersScreen() {
             },
             {
                 key: 'status',
+                fields: ['status', 'status_label'],
                 label: 'Estado',
                 sortable: true,
                 searchable: false,
@@ -205,6 +215,7 @@ export default function UsersScreen() {
             },
             {
                 key: 'last_login',
+                fields: ['last_login_at'],
                 label: 'Último acceso',
                 searchable: false,
                 filterable: false,
@@ -214,6 +225,7 @@ export default function UsersScreen() {
             },
             {
                 key: 'created',
+                fields: ['created_at'],
                 label: 'Creado',
                 sortable: true,
                 searchable: false,
@@ -224,6 +236,12 @@ export default function UsersScreen() {
         ],
         [roles],
     );
+
+    // La fila trae solo las columnas visibles: el formulario carga el usuario completo.
+    const openEdit = (user: SystemUser) =>
+        fetchUserDetail(user.id)
+            .then(setEditing)
+            .catch((error) => toast.error(messageOf(error)));
 
     const refresh = () => {
         list.reload();
@@ -297,9 +315,8 @@ export default function UsersScreen() {
             defaultHidden={['position', 'created']}
             rows={list.rows}
             loading={list.loading}
-            loadingMore={list.loadingMore}
-            hasMore={list.hasMore}
-            onLoadMore={list.loadMore}
+            pager={list.pager}
+            requiredFields={['id', 'name']}
             error={list.error}
             onRetry={list.retry}
             onQuery={setQuery}
@@ -314,7 +331,7 @@ export default function UsersScreen() {
                                   <RowAction
                                       label="Editar"
                                       tone="edit"
-                                      onClick={() => setEditing(user)}
+                                      onClick={() => openEdit(user)}
                                   >
                                       <Pencil className="size-4" aria-hidden />
                                   </RowAction>

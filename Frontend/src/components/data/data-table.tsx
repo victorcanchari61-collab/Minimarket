@@ -1,6 +1,8 @@
 import {
     ArrowDown,
     ArrowUp,
+    ChevronLeft,
+    ChevronRight,
     ChevronsUpDown,
     Eye,
     GripVertical,
@@ -20,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { FIELD_HEIGHT } from '@/components/ui/field-size';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { useDismiss } from '@/hooks/use-dismiss';
-import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
+import type { Pager } from '@/hooks/use-paged-list';
 import { cn } from '@/lib/utils';
 
 /**
@@ -75,6 +77,12 @@ export interface DataTableColumn<T> {
     /** Opciones del desplegable cuando `filterType: 'select'`. */
     filterOptions?: { value: string; label: string }[];
     render?: (row: T) => ReactNode;
+    /**
+     * Campos de la API que esta columna necesita para pintarse ("created_at"
+     * para la fecha, "branch_name" para la sucursal). Sin esto se pide el
+     * campo que se llama igual que la columna. Una columna oculta no se pide.
+     */
+    fields?: string[];
 
     /**
      * En la tarjeta del móvil, la cabecera lleva su etiqueta al costado.
@@ -108,6 +116,11 @@ export interface TableQuery {
     /** Columna y sentido del orden, o null si no hay orden elegido. */
     sort: { column: string; direction: 'asc' | 'desc' } | null;
     filters: TableFilterQuery[];
+    /**
+     * Los campos que hay que pedir: los de las columnas visibles (y los que
+     * necesitan los botones de cada fila). El servidor devuelve solo esos.
+     */
+    fields: string[];
 }
 
 export interface DataTableProps<T> {
@@ -116,12 +129,13 @@ export interface DataTableProps<T> {
     rows: T[];
     /** Primera carga: se pintan filas de relleno. */
     loading?: boolean;
-    /** Carga de la siguiente tanda: se pinta una fila "Cargando más…". */
-    loadingMore?: boolean;
-    /** Hay otra tanda por pedir con el cursor. */
-    hasMore?: boolean;
-    /** Pide la siguiente tanda (scroll al final o botón "Cargar más"). */
-    onLoadMore?: () => void;
+    /** Controles Anterior / Siguiente de la lista por páginas (ver usePagedList). */
+    pager?: Pager;
+    /**
+     * Campos que piden los botones de cada fila aunque su columna esté oculta
+     * (el id y el nombre para el mensaje de "¿eliminar?", por ejemplo).
+     */
+    requiredFields?: string[];
     /** Mensaje de la última petición fallida. */
     error?: string;
     onRetry?: () => void;
@@ -167,7 +181,7 @@ export interface DataTableProps<T> {
     onRowClick?: (row: T) => void;
     /** Oculta el buscador general y los botones de filtros/columnas, para tablas chicas donde solo estorban. */
     toolbar?: boolean;
-    /** Oculta el pie "N filas cargadas" y el botón "Cargar más". */
+    /** Oculta el pie con la página actual y los botones Anterior / Siguiente. */
     footer?: boolean;
     /** Alto máximo del área con scroll; sticky de la cabecera incluido. */
     scrollClassName?: string;
@@ -197,10 +211,9 @@ function sameFilter(a: DataTableFilter, b?: DataTableFilter): boolean {
 export function DataTable<T>({
     columns,
     rows,
-    loading = false,
-    loadingMore = false,
-    hasMore = false,
-    onLoadMore,
+    loading: loadingProp = false,
+    pager,
+    requiredFields,
     error,
     onRetry,
     onQuery,
@@ -370,8 +383,21 @@ export function DataTable<T>({
      * normalmente la pasa como función inline, que cambia en cada render, y el
      * efecto se repetiría sin parar.
      */
+    // Solo se piden las columnas que se ven: una columna oculta no viaja.
+    const fields = useMemo(
+        () =>
+            [
+                ...new Set([
+                    ...(requiredFields ?? []),
+                    ...visible.flatMap((column) => column.fields ?? [column.key]),
+                ]),
+            ].sort(),
+        [visible, requiredFields],
+    );
+
     const query = useMemo<TableQuery>(
         () => ({
+            fields,
             search: search.trim(),
             sort,
             filters: [
@@ -390,7 +416,7 @@ export function DataTable<T>({
                     })),
             ],
         }),
-        [search, sort, filters, columnSearch],
+        [fields, search, sort, filters, columnSearch],
     );
     const debouncedQuery = useDebouncedValue(query, QUERY_DELAY);
 
@@ -417,29 +443,6 @@ export function DataTable<T>({
         bodyRef.current?.scrollTo({ top: 0 });
         cardsRef.current?.scrollTo({ top: 0 });
     }, [debouncedQuery]);
-
-    /*
-     * Scroll infinito. Cada vista (tabla y tarjetas) tiene su propio
-     * centinela con su contenedor como `root`; la que está oculta con CSS no
-     * intersecta nunca, así que solo dispara la visible.
-     *
-     * Con un error pendiente no se pide más: sin esto el centinela seguiría a
-     * la vista y reintentaría en bucle una petición que falla.
-     */
-    const loadMore = () => onLoadMore?.();
-    const busy = loadingMore || loading || Boolean(error);
-    const tableSentinelRef = useInfiniteScroll({
-        hasMore,
-        loading: busy,
-        onLoadMore: loadMore,
-        root: bodyRef,
-    });
-    const cardsSentinelRef = useInfiniteScroll({
-        hasMore,
-        loading: busy,
-        onLoadMore: loadMore,
-        root: cardsRef,
-    });
 
     /*
      * El reparto del ancho.
@@ -491,6 +494,13 @@ export function DataTable<T>({
 
         return cols;
     }, [visible, widths, actions, actionsWidth, rowNumbers]);
+
+    const loading = loadingProp || Boolean(pager?.loading);
+    // Al cambiar de página se vuelve arriba de la tabla, no a donde estaba el scroll.
+    const scrollToTop = () => {
+        bodyRef.current?.scrollTo({ top: 0 });
+        cardsRef.current?.scrollTo({ top: 0 });
+    };
 
     const closePanel = () => setPanel(null);
     const activeColumnSearches = Object.values(columnSearch).filter((value) =>
@@ -973,7 +983,7 @@ export function DataTable<T>({
                                     >
                                         {rowNumbers && (
                                             <td className="px-3 py-1.5 text-center text-ink-muted tabular-nums">
-                                                {rowIndex + 1}
+                                                {rowIndex + 1 + (pager?.offset ?? 0)}
                                             </td>
                                         )}
                                         {visible.map((column) => (
@@ -1009,12 +1019,6 @@ export function DataTable<T>({
                                     </tr>
                                 ))}
 
-                            {loadingMore && (
-                                <MessageRow colSpan={colSpan}>
-                                    Cargando más…
-                                </MessageRow>
-                            )}
-
                             {error && (
                                 <MessageRow colSpan={colSpan}>
                                     <ErrorMessage
@@ -1025,9 +1029,6 @@ export function DataTable<T>({
                             )}
                         </tbody>
                     </table>
-
-                    {/* Centinela: al hacerse visible pide la siguiente tanda. */}
-                    <div ref={tableSentinelRef} className="h-px" aria-hidden />
                 </div>
             </div>
 
@@ -1166,19 +1167,11 @@ export function DataTable<T>({
                         );
                     })}
 
-                {loadingMore && (
-                    <p className="px-4 py-3 text-center text-[12px] text-ink-muted">
-                        Cargando más…
-                    </p>
-                )}
-
                 {error && (
                     <div className="rounded-panel border border-line bg-surface px-4 py-6 text-center text-sm">
                         <ErrorMessage message={error} onRetry={onRetry} />
                     </div>
                 )}
-
-                <div ref={cardsSentinelRef} className="h-px" aria-hidden />
             </div>
 
             {/* Buscador de columna: fuera del árbol de la tabla para que nada lo recorte. */}
@@ -1205,22 +1198,41 @@ export function DataTable<T>({
                             ? 'Cargando…'
                             : rows.length === 0
                               ? 'Sin registros'
-                              : `${rows.length} ${rows.length === 1 ? 'fila cargada' : 'filas cargadas'}`}
-                        {hasMore && ' · Hay más'}
+                              : pager
+                                ? `Página ${pager.page} · ${rows.length} ${rows.length === 1 ? 'fila' : 'filas'}`
+                                : `${rows.length} ${rows.length === 1 ? 'fila' : 'filas'}`}
                     </span>
 
-                    {/* Alternativa por teclado al scroll infinito. */}
-                    {hasMore && (
-                        <Button
-                            type="button"
-                            size="sm"
-                            variant="secondary"
-                            loading={loadingMore}
-                            disabled={loading || Boolean(error)}
-                            onClick={loadMore}
-                        >
-                            Cargar más
-                        </Button>
+                    {pager && (pager.hasPrev || pager.hasNext) && (
+                        <div className="flex items-center gap-2">
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                disabled={!pager.hasPrev || loading}
+                                onClick={() => {
+                                    pager.onPrev();
+                                    scrollToTop();
+                                }}
+                            >
+                                <ChevronLeft className="size-4" aria-hidden />
+                                Anterior
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                loading={pager.loading}
+                                disabled={!pager.hasNext || loading || Boolean(error)}
+                                onClick={() => {
+                                    pager.onNext();
+                                    scrollToTop();
+                                }}
+                            >
+                                Siguiente
+                                <ChevronRight className="size-4" aria-hidden />
+                            </Button>
+                        </div>
                     )}
                 </div>
             )}

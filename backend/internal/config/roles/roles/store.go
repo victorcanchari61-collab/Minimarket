@@ -20,14 +20,40 @@ func NewStore(db database.Executor) *Store {
 	return &Store{db: db}
 }
 
-const roleSelect = `
-	SELECT r.id, COALESCE(r.code, ''), r.name, r.description, r.created_at,
+const roleHead = `
+	SELECT r.id, COALESCE(r.code, ''), r.name, r.description, r.created_at,`
+
+const rolePermissions = `
 	       COALESCE((SELECT array_agg(p.permission ORDER BY p.permission)
-	                 FROM role_permissions p WHERE p.role_id = r.id), '{}'::text[]),
+	                 FROM role_permissions p WHERE p.role_id = r.id), '{}'::text[]),`
+
+const roleUsers = `
 	       (SELECT count(*) FROM user_roles ur
 	        JOIN users u ON u.id = ur.user_id AND u.deleted_at IS NULL
-	        WHERE ur.role_id = r.id)
-	FROM roles r`
+	        WHERE ur.role_id = r.id)`
+
+// roleSelectSQL arma el SELECT con o sin los permisos y la cuenta de usuarios
+// de cada rol; lo que no se pidió se devuelve vacío, sin calcularlo.
+func roleSelectSQL(permissions, users bool) string {
+	sql := roleHead
+
+	if permissions {
+		sql += rolePermissions
+	} else {
+		sql += "\n\t       '{}'::text[],"
+	}
+
+	if users {
+		sql += roleUsers
+	} else {
+		sql += "\n\t       0::bigint"
+	}
+
+	return sql + "\n\tFROM roles r"
+}
+
+// roleSelect trae todo: para un solo rol.
+var roleSelect = roleSelectSQL(true, true)
 
 func scanRole(row pgx.Row) (Role, error) {
 	var r Role

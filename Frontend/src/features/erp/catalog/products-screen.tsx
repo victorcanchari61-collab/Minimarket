@@ -10,7 +10,7 @@ import { Modal } from '@/components/ui/modal';
 import { RowAction } from '@/components/ui/row-action';
 import { StatCard } from '@/components/ui/stat-card';
 import { useConfirm } from '@/hooks/use-confirm';
-import { useCursorList } from '@/hooks/use-cursor-list';
+import { usePagedList } from '@/hooks/use-paged-list';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useToast } from '@/hooks/use-toast';
 import { ApiError } from '@/lib/api';
@@ -19,6 +19,7 @@ import {
     createProduct,
     deleteProduct,
     fetchCategories,
+    fetchProductDetail,
     fetchProductSummary,
     fetchProductsPage,
     fetchUnits,
@@ -44,7 +45,7 @@ const messageOf = (error: unknown) =>
 /** ERP › Catálogo y maestros › Productos, con datos reales de la API. */
 export default function ProductsScreen() {
     const [query, setQuery] = useState<TableQuery | null>(null);
-    const list = useCursorList<Product, TableQuery>({
+    const list = usePagedList<Product, TableQuery>({
         query,
         fetchPage: fetchProductsPage,
     });
@@ -79,12 +80,14 @@ export default function ProductsScreen() {
         () => [
             {
                 key: 'sku',
+                fields: ['sku'],
                 label: 'SKU',
                 sortable: true,
                 width: 120,
             },
             {
                 key: 'name',
+                fields: ['name'],
                 label: 'Producto',
                 sortable: true,
                 width: 260,
@@ -94,6 +97,7 @@ export default function ProductsScreen() {
             },
             {
                 key: 'category',
+                fields: ['category'],
                 label: 'Categoría',
                 searchable: false,
                 filterType: 'select',
@@ -106,6 +110,7 @@ export default function ProductsScreen() {
             },
             {
                 key: 'unit',
+                fields: ['unit'],
                 label: 'Unidad',
                 searchable: false,
                 filterable: false,
@@ -113,6 +118,7 @@ export default function ProductsScreen() {
             },
             {
                 key: 'price',
+                fields: ['price'],
                 label: 'Precio',
                 align: 'right',
                 sortable: true,
@@ -123,6 +129,7 @@ export default function ProductsScreen() {
             },
             {
                 key: 'status',
+                fields: ['status', 'status_label'],
                 label: 'Estado',
                 sortable: true,
                 searchable: false,
@@ -140,6 +147,12 @@ export default function ProductsScreen() {
         ],
         [categories],
     );
+
+    // La fila trae solo las columnas visibles: el formulario carga el producto completo.
+    const openEdit = (product: Product) =>
+        fetchProductDetail(product.id)
+            .then(setEditing)
+            .catch((error) => toast.error(messageOf(error)));
 
     const refresh = () => {
         list.reload();
@@ -200,9 +213,8 @@ export default function ProductsScreen() {
             columns={columns}
             rows={list.rows}
             loading={list.loading}
-            loadingMore={list.loadingMore}
-            hasMore={list.hasMore}
-            onLoadMore={list.loadMore}
+            pager={list.pager}
+            requiredFields={['id', 'name']}
             error={list.error}
             onRetry={list.retry}
             onQuery={setQuery}
@@ -217,7 +229,7 @@ export default function ProductsScreen() {
                                   <RowAction
                                       label="Editar"
                                       tone="edit"
-                                      onClick={() => setEditing(product)}
+                                      onClick={() => openEdit(product)}
                                   >
                                       <Pencil className="size-4" aria-hidden />
                                   </RowAction>

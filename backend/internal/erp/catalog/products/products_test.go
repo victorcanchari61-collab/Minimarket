@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -357,5 +358,37 @@ func TestSummaryCountsActiveInactiveAndCategories(t *testing.T) {
 
 	if data["active"].(float64) != 2 || data["inactive"].(float64) != 1 || data["categories"].(float64) != 0 {
 		t.Fatalf("resumen inesperado: %v", data)
+	}
+}
+
+// fieldKeys devuelve los campos de una fila como "a,b,c" (ordenados).
+func fieldKeys(item any) string {
+	keys := make([]string, 0)
+	for key := range item.(map[string]any) {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	return strings.Join(keys, ",")
+}
+
+func TestListOnlyReturnsTheRequestedFields(t *testing.T) {
+	f := newFixture(t)
+	f.product("SKU-1", "Arroz", "4.50", nil)
+
+	list := f.call("GET", "/api/catalog/products?fields=sku,price", nil)["data"].([]any)
+	if len(list) == 0 {
+		t.Fatal("debía haber productos")
+	}
+
+	for _, item := range list {
+		if got := fieldKeys(item); got != "id,price,sku" {
+			t.Fatalf("sku, precio e id: %s", got)
+		}
+	}
+
+	if f.status("GET", "/api/catalog/products?fields=nope", nil) != http.StatusUnprocessableEntity {
+		t.Fatal("un campo que no existe esperaba 422")
 	}
 }

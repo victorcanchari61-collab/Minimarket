@@ -8,13 +8,38 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-const branchSelect = `
-	SELECT b.id, b.code, b.name, b.address, b.phone, COALESCE(b.sunat_code, ''), b.kind, b.active,
-	       (SELECT count(*) FROM warehouses w WHERE w.branch_id = b.id AND w.deleted_at IS NULL),
+const branchHead = `
+	SELECT b.id, b.code, b.name, b.address, b.phone, COALESCE(b.sunat_code, ''), b.kind, b.active,`
+
+const branchWarehouses = `
+	       (SELECT count(*) FROM warehouses w WHERE w.branch_id = b.id AND w.deleted_at IS NULL),`
+
+const branchUsers = `
 	       (SELECT count(*) FROM user_branches ub
-	        JOIN users u ON u.id = ub.user_id AND u.deleted_at IS NULL WHERE ub.branch_id = b.id),
-	       b.created_at
-	FROM branches b`
+	        JOIN users u ON u.id = ub.user_id AND u.deleted_at IS NULL WHERE ub.branch_id = b.id),`
+
+// branchSelectSQL arma el SELECT con o sin la cuenta de almacenes y de
+// usuarios de cada sucursal; lo que no se pidió vale 0, sin calcularlo.
+func branchSelectSQL(warehouses, users bool) string {
+	sql := branchHead
+
+	if warehouses {
+		sql += branchWarehouses
+	} else {
+		sql += "\n\t       0::bigint,"
+	}
+
+	if users {
+		sql += branchUsers
+	} else {
+		sql += "\n\t       0::bigint,"
+	}
+
+	return sql + "\n\t       b.created_at\n\tFROM branches b"
+}
+
+// branchSelect trae todo: para una sola sucursal.
+var branchSelect = branchSelectSQL(true, true)
 
 func scanBranch(row pgx.Row) (Branch, error) {
 	var b Branch

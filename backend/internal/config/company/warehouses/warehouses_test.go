@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -203,5 +205,35 @@ func TestBranchesLookupAndPermissions(t *testing.T) {
 		if code, _ := send(router, request.method, request.path, viewer, map[string]any{}); code != http.StatusForbidden {
 			t.Errorf("%s %s sin permiso esperaba 403, llegó %d", request.method, request.path, code)
 		}
+	}
+}
+
+// fieldKeys devuelve los campos de una fila como "a,b,c" (ordenados).
+func fieldKeys(item any) string {
+	keys := make([]string, 0)
+	for key := range item.(map[string]any) {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	return strings.Join(keys, ",")
+}
+
+func TestListOnlyReturnsTheRequestedFields(t *testing.T) {
+	router, pool := testutil.Router(t, "local")
+	token := testutil.Login(t, router, pool)
+
+	send(router, "POST", "/api/warehouses", token, body(addBranch(t, pool, "C01", "Sucursal Centro"), "ALM-01", "Principal"))
+
+	_, list := send(router, "GET", "/api/warehouses?fields=code,branch_name", token, nil)
+	for _, item := range list["data"].([]any) {
+		if got := fieldKeys(item); got != "branch_name,code,id" {
+			t.Fatalf("código, sucursal e id: %s", got)
+		}
+	}
+
+	if code, _ := send(router, "GET", "/api/warehouses?fields=nope", token, nil); code != http.StatusUnprocessableEntity {
+		t.Fatalf("un campo que no existe esperaba 422, llegó %d", code)
 	}
 }

@@ -135,7 +135,7 @@ Los listados son lo que más puede degradar el sistema (el kardex, las ventas o 
 8. **Búsqueda de texto con índice:** mínimo 2 caracteres; para códigos, prefijo; para nombres, índice `pg_trgm` y `unaccent` (así "cafe" encuentra "Café"). Los `%` y `_` que escribe el usuario se tratan como texto, no como comodines.
 9. **Filtros y orden con lista blanca.** Solo se ordena por columnas declaradas en la consulta, cada una con su índice; cualquier otra se rechaza con 422.
 10. **Un índice `(columna, id)` por cada orden permitido**, documentado en la migración.
-11. **Salida mínima en listados:** solo lo que se muestra; el detalle va en `GET /:id`.
+11. **Salida mínima en listados: `?fields=`.** El cliente pide solo las columnas que muestra (`?fields=name,email`) y la fila trae esos campos más `id`; sin `?fields` viene completa. Un nombre que no existe es un 422 que lista los válidos. `web.BindFields[Recurso]` valida y `web.Pick` recorta la fila. Además, lo que cuesta calcular (los roles de cada usuario, los conteos de almacenes, los permisos de cada rol) **solo se consulta si ese campo se pidió** (`Skip…` en el filtro del store). El detalle completo va en `GET /:id`: un formulario de edición lo pide al abrirse, porque la fila de la tabla no trae todo.
 12. **Exportaciones fuera del listado:** un trabajo en segundo plano, nunca ampliando el límite de 20.
 
 ### 5.1 Contrato de respuesta de un listado

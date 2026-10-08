@@ -72,6 +72,7 @@ export function fetchBranchesPage(
     const params: Record<string, string | number | undefined> = {
         // El servidor exige 2 caracteres como mínimo para buscar.
         search: search.length >= 2 ? search : undefined,
+        fields: query.fields.join(','),
         sort: query.sort?.column,
         direction: query.sort?.direction,
         cursor,
@@ -84,6 +85,9 @@ export function fetchBranchesPage(
 
     return getPage<ManagedBranch>('/branches', params);
 }
+
+export const fetchBranchDetail = (id: number) =>
+    apiGet<ManagedBranch>(`/branches/${id}`);
 
 export const fetchBranchSummary = () => apiGet<BranchSummary>('/branches/summary');
 
@@ -134,6 +138,7 @@ export function fetchWarehousesPage(
 
     const params: Record<string, string | number | undefined> = {
         search: search.length >= 2 ? search : undefined,
+        fields: query.fields.join(','),
         sort: query.sort?.column,
         direction: query.sort?.direction,
         cursor,
@@ -146,6 +151,9 @@ export function fetchWarehousesPage(
 
     return getPage<Warehouse>('/warehouses', params);
 }
+
+export const fetchWarehouseDetail = (id: number) =>
+    apiGet<Warehouse>(`/warehouses/${id}`);
 
 export const fetchWarehouseSummary = () =>
     apiGet<WarehouseSummary>('/warehouses/summary');

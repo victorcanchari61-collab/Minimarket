@@ -16,6 +16,7 @@ import { RowAction } from '@/components/ui/row-action';
 import { ShareCard } from '@/components/ui/share-card';
 import {
     deleteWarehouse,
+    fetchWarehouseDetail,
     fetchWarehouseBranches,
     fetchWarehouseSummary,
     fetchWarehousesPage,
@@ -27,7 +28,7 @@ import type {
 } from '@/features/config/company/company-api';
 import { WarehouseModal } from '@/features/config/company/warehouse-modal';
 import { useConfirm } from '@/hooks/use-confirm';
-import { useCursorList } from '@/hooks/use-cursor-list';
+import { usePagedList } from '@/hooks/use-paged-list';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/format';
@@ -43,7 +44,7 @@ const messageOf = (error: unknown) =>
 /** Configuraciones › Empresa y sucursales › Almacenes, con datos reales de la API. */
 export default function WarehousesScreen() {
     const [query, setQuery] = useState<TableQuery | null>(null);
-    const list = useCursorList<Warehouse, TableQuery>({
+    const list = usePagedList<Warehouse, TableQuery>({
         query,
         fetchPage: fetchWarehousesPage,
     });
@@ -77,6 +78,7 @@ export default function WarehousesScreen() {
         () => [
             {
                 key: 'code',
+                fields: ['code'],
                 label: 'Código',
                 sortable: true,
                 filterable: false,
@@ -87,6 +89,7 @@ export default function WarehousesScreen() {
             },
             {
                 key: 'name',
+                fields: ['name'],
                 label: 'Almacén',
                 sortable: true,
                 filterable: false,
@@ -97,6 +100,7 @@ export default function WarehousesScreen() {
             },
             {
                 key: 'branch',
+                fields: ['branch_name'],
                 label: 'Sucursal',
                 searchable: false,
                 filterType: 'select',
@@ -109,6 +113,7 @@ export default function WarehousesScreen() {
             },
             {
                 key: 'address',
+                fields: ['address'],
                 label: 'Ubicación',
                 searchable: false,
                 filterable: false,
@@ -117,6 +122,7 @@ export default function WarehousesScreen() {
             },
             {
                 key: 'status',
+                fields: ['active'],
                 label: 'Estado',
                 sortable: true,
                 searchable: false,
@@ -131,6 +137,7 @@ export default function WarehousesScreen() {
             },
             {
                 key: 'created',
+                fields: ['created_at'],
                 label: 'Creado',
                 sortable: true,
                 searchable: false,
@@ -146,6 +153,12 @@ export default function WarehousesScreen() {
         list.reload();
         loadSummary();
     };
+
+    // La fila trae solo las columnas visibles: el formulario carga el almacén completo.
+    const openEdit = (warehouse: Warehouse) =>
+        fetchWarehouseDetail(warehouse.id)
+            .then(setEditing)
+            .catch((error) => toast.error(messageOf(error)));
 
     const askDelete = (warehouse: Warehouse) =>
         confirm({
@@ -206,9 +219,8 @@ export default function WarehousesScreen() {
             rowNumbers
             rows={list.rows}
             loading={list.loading}
-            loadingMore={list.loadingMore}
-            hasMore={list.hasMore}
-            onLoadMore={list.loadMore}
+            pager={list.pager}
+            requiredFields={['id', 'name', 'branch_name']}
             error={list.error}
             onRetry={list.retry}
             onQuery={setQuery}
@@ -223,7 +235,7 @@ export default function WarehousesScreen() {
                                   <RowAction
                                       label="Editar"
                                       tone="edit"
-                                      onClick={() => setEditing(warehouse)}
+                                      onClick={() => openEdit(warehouse)}
                                   >
                                       <Pencil className="size-4" aria-hidden />
                                   </RowAction>

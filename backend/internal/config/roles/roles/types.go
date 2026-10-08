@@ -34,4 +34,7 @@ type Filter struct {
 	Sort   string // name | created ("" = name)
 	Desc   bool
 	Cursor string
+	// Lo que la tabla no muestra no se calcula.
+	SkipPermissions bool
+	SkipUserCount   bool
 }

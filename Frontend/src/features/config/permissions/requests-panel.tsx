@@ -19,7 +19,7 @@ import type {
     RequestStatus,
 } from '@/features/config/permissions/access-api';
 import { useConfirm } from '@/hooks/use-confirm';
-import { useCursorList } from '@/hooks/use-cursor-list';
+import { usePagedList } from '@/hooks/use-paged-list';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/format';
 import { describe } from '@/lib/permission-tree';
@@ -55,7 +55,7 @@ type RequestsPanelProps = {
 export function RequestsPanel({ tree, tabs, canAssign, onChanged }: RequestsPanelProps) {
     // Lo que hay que atender primero: las pendientes.
     const [filter, setFilter] = useState<RequestFilter>('pending');
-    const list = useCursorList<AccessRequest, RequestFilter>({
+    const list = usePagedList<AccessRequest, RequestFilter>({
         query: filter,
         fetchPage: fetchRequestsPage,
     });
@@ -184,9 +184,7 @@ export function RequestsPanel({ tree, tabs, canAssign, onChanged }: RequestsPane
             columns={columns}
             rows={list.rows}
             loading={list.loading}
-            loadingMore={list.loadingMore}
-            hasMore={list.hasMore}
-            onLoadMore={list.loadMore}
+            pager={list.pager}
             error={list.error}
             onRetry={list.retry}
             // El estado se elige con los botones de arriba; la tabla no filtra por su cuenta.

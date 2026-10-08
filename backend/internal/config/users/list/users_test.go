@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -618,5 +620,64 @@ func TestBranchesLookupForTheForm(t *testing.T) {
 	roles := testutil.Decode(t, testutil.Call(router, "GET", "/api/users/roles", admin, nil))["data"].([]any)
 	if roles[0].(map[string]any)["is_admin"] != true {
 		t.Fatalf("el rol Administrador debe venir marcado: %v", roles)
+	}
+}
+
+// fieldKeys devuelve los campos de una fila como "a,b,c" (ordenados).
+func fieldKeys(item any) string {
+	keys := make([]string, 0)
+	for key := range item.(map[string]any) {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	return strings.Join(keys, ",")
+}
+
+func TestListOnlyReturnsTheRequestedFields(t *testing.T) {
+	router, pool := testutil.Router(t, "local")
+	token := testutil.Login(t, router, pool)
+
+	create(router, token, newUserBody("campos@minimarket.test", roleID(t, pool, "Cajero")))
+
+	rows := func(query string) []any {
+		return testutil.Decode(t, testutil.Call(router, "GET", "/api/users"+query, token, nil))["data"].([]any)
+	}
+
+	for _, item := range rows("?fields=name,email") {
+		if got := fieldKeys(item); got != "email,id,name" {
+			t.Fatalf("solo nombre, correo e id: %s", got)
+		}
+	}
+
+	var withRoles int
+
+	for _, item := range rows("?fields=name,roles") {
+		if got := fieldKeys(item); got != "id,name,roles" {
+			t.Fatalf("nombre, roles e id: %s", got)
+		}
+
+		if len(item.(map[string]any)["roles"].([]any)) == 1 {
+			withRoles++
+		}
+	}
+
+	if withRoles != 2 { // el administrador y el de la prueba tienen un rol cada uno
+		t.Fatalf("pidiendo roles deben venir calculados: %d con rol", withRoles)
+	}
+
+	for _, item := range rows("?fields=name,branches") {
+		if got := fieldKeys(item); got != "branches,id,name" {
+			t.Fatalf("nombre, sucursales e id: %s", got)
+		}
+	}
+
+	if code := testutil.Call(router, "GET", "/api/users?fields=password", token, nil).Code; code != http.StatusUnprocessableEntity {
+		t.Fatalf("un campo que no existe esperaba 422, llegó %d", code)
+	}
+
+	if len(rows("")[0].(map[string]any)) < 12 {
+		t.Fatal("sin ?fields debe venir la fila completa")
 	}
 }

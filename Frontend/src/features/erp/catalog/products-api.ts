@@ -48,6 +48,7 @@ export function fetchProductsPage(
     const params: Record<string, string | number | undefined> = {
         // El servidor exige 2 caracteres como mínimo para buscar.
         search: search.length >= 2 ? search : undefined,
+        fields: query.fields.join(','),
         sort: query.sort?.column,
         direction: query.sort?.direction,
         cursor,
@@ -70,6 +71,9 @@ export function fetchProductsPage(
 
     return getPage<Product>('/catalog/products', params);
 }
+
+export const fetchProductDetail = (id: number) =>
+    apiGet<Product>(`/catalog/products/${id}`);
 
 export const fetchProductSummary = () =>
     apiGet<ProductSummary>('/catalog/products/summary');

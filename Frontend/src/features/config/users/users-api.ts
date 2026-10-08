@@ -72,6 +72,7 @@ export function fetchUsersPage(
     const params: Record<string, string | number | undefined> = {
         // El servidor exige 2 caracteres como mínimo para buscar.
         search: search.length >= 2 ? search : undefined,
+        fields: query.fields.join(','),
         sort: query.sort?.column,
         direction: query.sort?.direction,
         cursor,
@@ -97,6 +98,9 @@ export function fetchUsersPage(
 
     return getPage<SystemUser>('/users', params);
 }
+
+export const fetchUserDetail = (id: number) =>
+    apiGet<SystemUser>(`/users/${id}`);
 
 export const fetchUserSummary = () => apiGet<UserSummary>('/users/summary');
 

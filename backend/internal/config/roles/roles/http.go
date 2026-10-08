@@ -80,8 +80,15 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 
+	fields, ok := web.BindFields[roleResource](c)
+	if !ok {
+		return
+	}
+
 	page, err := h.service.List(c.Request.Context(), Filter{
 		Search: q.Search, Sort: q.Sort, Desc: q.Direction == "desc", Cursor: q.Cursor,
+		SkipPermissions: !fields.Wants("permissions"),
+		SkipUserCount:   !fields.Wants("user_count"),
 	})
 	if err != nil {
 		_ = c.Error(err)
@@ -89,12 +96,12 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 
-	data := make([]roleResource, len(page.Data))
+	data := make([]any, len(page.Data))
 	for i, r := range page.Data {
-		data[i] = resource(r)
+		data[i] = web.Pick(resource(r), fields)
 	}
 
-	c.JSON(http.StatusOK, pagination.Page[roleResource]{Data: data, Meta: page.Meta})
+	c.JSON(http.StatusOK, pagination.Page[any]{Data: data, Meta: page.Meta})
 }
 
 func (h *Handler) Show(c *gin.Context) {

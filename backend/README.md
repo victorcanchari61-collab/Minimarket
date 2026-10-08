@@ -47,6 +47,8 @@ Requiere Go 1.27 y PostgreSQL (base `minimarket`). En Windows, `iniciar-api.bat`
 | GET | `/api/permissions/catalog` | árbol completo de permisos (sistema → módulo → submódulo → acciones) |
 | GET | `/up` · `/api/health` | vida del servicio · vida con base de datos |
 
+Los listados devuelven 20 filas por petición y aceptan `?fields=a,b,c` para traer solo esas columnas (más `id`); el detalle completo está en `GET …/:id`.
+
 Todas las rutas, salvo el login, las credenciales de prueba y los chequeos de salud, exigen `Authorization: Bearer <token>` y, además, el permiso de su acción (403 `FORBIDDEN` si falta). Los errores siguen un solo formato: `{ message, code, errors?, context? }`.
 
 ## Estructura

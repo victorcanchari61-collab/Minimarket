@@ -109,6 +109,9 @@ type Filter struct {
 	Sort   string // code | name | email | status | created ("" = name)
 	Desc   bool
 	Cursor string
+	// Lo que la tabla no muestra no se calcula.
+	SkipRoles    bool
+	SkipBranches bool
 }
 
 // Summary son las cifras de la cabecera de la pantalla (los totales no salen

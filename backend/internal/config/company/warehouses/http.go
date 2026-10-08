@@ -92,6 +92,11 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 
+	fields, ok := web.BindFields[warehouseResource](c)
+	if !ok {
+		return
+	}
+
 	filter := Filter{
 		Search: q.Search, BranchID: q.BranchID, Sort: q.Sort, Desc: q.Direction == "desc", Cursor: q.Cursor,
 	}
@@ -108,12 +113,12 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 
-	data := make([]warehouseResource, len(page.Data))
+	data := make([]any, len(page.Data))
 	for i, w := range page.Data {
-		data[i] = resource(w)
+		data[i] = web.Pick(resource(w), fields)
 	}
 
-	c.JSON(http.StatusOK, pagination.Page[warehouseResource]{Data: data, Meta: page.Meta})
+	c.JSON(http.StatusOK, pagination.Page[any]{Data: data, Meta: page.Meta})
 }
 
 func (h *Handler) Show(c *gin.Context) {

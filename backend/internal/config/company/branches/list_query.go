@@ -109,7 +109,7 @@ func (s *Store) List(ctx context.Context, f Filter) (pagination.Page[Branch], er
 			" ("+arg(cursor.Value)+"::"+spec.cast+", "+arg(cursor.ID)+")")
 	}
 
-	query := branchSelect +
+	query := branchSelectSQL(!f.SkipWarehouses, !f.SkipUsers) +
 		" WHERE " + strings.Join(where, " AND ") +
 		" ORDER BY " + spec.expr + " " + direction + ", b.id " + direction +
 		" LIMIT " + arg(pagination.Limit())

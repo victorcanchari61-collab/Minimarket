@@ -18,12 +18,13 @@ import { ShareCard } from '@/components/ui/share-card';
 import { BranchModal } from '@/features/config/company/branch-modal';
 import {
     deleteBranch,
+    fetchBranchDetail,
     fetchBranchesPage,
     fetchBranchSummary,
 } from '@/features/config/company/company-api';
 import type { BranchSummary, ManagedBranch } from '@/features/config/company/company-api';
 import { useConfirm } from '@/hooks/use-confirm';
-import { useCursorList } from '@/hooks/use-cursor-list';
+import { usePagedList } from '@/hooks/use-paged-list';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useToast } from '@/hooks/use-toast';
 import { notifyBranchesChanged } from '@/lib/branches';
@@ -45,7 +46,7 @@ const messageOf = (error: unknown) =>
 /** Configuraciones › Empresa y sucursales › Sucursales, con datos reales de la API. */
 export default function BranchesScreen() {
     const [query, setQuery] = useState<TableQuery | null>(null);
-    const list = useCursorList<ManagedBranch, TableQuery>({
+    const list = usePagedList<ManagedBranch, TableQuery>({
         query,
         fetchPage: fetchBranchesPage,
     });
@@ -75,6 +76,7 @@ export default function BranchesScreen() {
         () => [
             {
                 key: 'code',
+                fields: ['code'],
                 label: 'Código',
                 sortable: true,
                 filterable: false,
@@ -85,6 +87,7 @@ export default function BranchesScreen() {
             },
             {
                 key: 'name',
+                fields: ['name'],
                 label: 'Sucursal',
                 sortable: true,
                 filterable: false,
@@ -95,6 +98,7 @@ export default function BranchesScreen() {
             },
             {
                 key: 'kind',
+                fields: ['kind', 'kind_label'],
                 label: 'Tipo',
                 sortable: true,
                 searchable: false,
@@ -109,6 +113,7 @@ export default function BranchesScreen() {
             },
             {
                 key: 'sunat',
+                fields: ['sunat_code'],
                 label: 'SUNAT',
                 searchable: false,
                 filterable: false,
@@ -117,6 +122,7 @@ export default function BranchesScreen() {
             },
             {
                 key: 'address',
+                fields: ['address'],
                 label: 'Dirección',
                 searchable: false,
                 filterable: false,
@@ -125,6 +131,7 @@ export default function BranchesScreen() {
             },
             {
                 key: 'warehouses',
+                fields: ['warehouses'],
                 label: 'Almacenes',
                 align: 'right',
                 searchable: false,
@@ -134,6 +141,7 @@ export default function BranchesScreen() {
             },
             {
                 key: 'users',
+                fields: ['users'],
                 label: 'Usuarios',
                 align: 'right',
                 searchable: false,
@@ -143,6 +151,7 @@ export default function BranchesScreen() {
             },
             {
                 key: 'status',
+                fields: ['active'],
                 label: 'Estado',
                 sortable: true,
                 searchable: false,
@@ -157,6 +166,7 @@ export default function BranchesScreen() {
             },
             {
                 key: 'phone',
+                fields: ['phone'],
                 label: 'Teléfono',
                 searchable: false,
                 filterable: false,
@@ -165,6 +175,7 @@ export default function BranchesScreen() {
             },
             {
                 key: 'created',
+                fields: ['created_at'],
                 label: 'Creada',
                 sortable: true,
                 searchable: false,
@@ -182,10 +193,16 @@ export default function BranchesScreen() {
         notifyBranchesChanged(); // el selector de la cuenta debe ver el cambio
     };
 
+    // La fila trae solo las columnas visibles: el formulario carga la sucursal completa.
+    const openEdit = (branch: ManagedBranch) =>
+        fetchBranchDetail(branch.id)
+            .then(setEditing)
+            .catch((error) => toast.error(messageOf(error)));
+
     const askDelete = (branch: ManagedBranch) =>
         confirm({
             title: 'Eliminar sucursal',
-            message: `Se eliminará "${branch.name}" y su código quedará libre. Si solo quieres dejar de usarla, mejor desactívala.`,
+            message: `Se eliminará "${branch.name}" y su código quedará libre. Si tiene almacenes o usuarios asignados no se podrá eliminar; si solo quieres dejar de usarla, desactívala.`,
             confirmLabel: 'Eliminar',
             tone: 'danger',
             action: async () => {
@@ -198,8 +215,6 @@ export default function BranchesScreen() {
                 }
             },
         });
-
-    const blocked = (branch: ManagedBranch) => branch.warehouses > 0 || branch.users > 0;
 
     return (
         <ListPage<ManagedBranch>
@@ -251,9 +266,8 @@ export default function BranchesScreen() {
             defaultHidden={['phone', 'created']}
             rows={list.rows}
             loading={list.loading}
-            loadingMore={list.loadingMore}
-            hasMore={list.hasMore}
-            onLoadMore={list.loadMore}
+            pager={list.pager}
+            requiredFields={['id', 'name']}
             error={list.error}
             onRetry={list.retry}
             onQuery={setQuery}
@@ -268,7 +282,7 @@ export default function BranchesScreen() {
                                   <RowAction
                                       label="Editar"
                                       tone="edit"
-                                      onClick={() => setEditing(branch)}
+                                      onClick={() => openEdit(branch)}
                                   >
                                       <Pencil className="size-4" aria-hidden />
                                   </RowAction>
@@ -277,8 +291,6 @@ export default function BranchesScreen() {
                                   <RowAction
                                       label="Eliminar"
                                       tone="danger"
-                                      disabled={blocked(branch)}
-                                      disabledReason="Tiene almacenes o usuarios asignados: desactívala o pásalos a otra sucursal."
                                       onClick={() => askDelete(branch)}
                                   >
                                       <Trash2 className="size-4" aria-hidden />

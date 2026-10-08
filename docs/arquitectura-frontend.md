@@ -117,6 +117,9 @@ export function fetchKardexPage(filters: KardexFilters, cursor?: string) {
 Hook genérico que implementa el contrato de listados del backend (20 filas, cursor, sin total):
 
 ```ts
+// Las tablas (DataTable) usan usePagedList: una página de 20 a la vez, con
+// Anterior / Siguiente y pidiendo solo las columnas visibles (?fields=).
+// useCursorList (acumula filas con scroll) queda para los selectores dentro de un modal.
 const kardex = useCursorList({
     queryKey: ['kardex', filters],
     fetchPage: (cursor) => fetchKardexPage(filters, cursor),

@@ -9,11 +9,12 @@ import { RoleModal } from '@/features/config/roles/role-modal';
 import {
     deleteRole,
     fetchPermissionCatalog,
+    fetchRoleDetail,
     fetchRolesPage,
 } from '@/features/config/roles/roles-api';
 import type { Role } from '@/features/config/roles/roles-api';
 import { useConfirm } from '@/hooks/use-confirm';
-import { useCursorList } from '@/hooks/use-cursor-list';
+import { usePagedList } from '@/hooks/use-paged-list';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/format';
@@ -40,7 +41,7 @@ function systemsOf(role: Role, tree: CatalogNode[]): string[] {
 /** Configuraciones › Roles y permisos › Roles, con datos reales de la API. */
 export default function RolesScreen() {
     const [query, setQuery] = useState<TableQuery | null>(null);
-    const list = useCursorList<Role, TableQuery>({
+    const list = usePagedList<Role, TableQuery>({
         query,
         fetchPage: fetchRolesPage,
     });
@@ -65,6 +66,7 @@ export default function RolesScreen() {
         () => [
             {
                 key: 'name',
+                fields: ['name'],
                 label: 'Rol',
                 sortable: true,
                 filterable: false,
@@ -75,6 +77,7 @@ export default function RolesScreen() {
             },
             {
                 key: 'description',
+                fields: ['description'],
                 label: 'Descripción',
                 searchable: false,
                 filterable: false,
@@ -83,6 +86,7 @@ export default function RolesScreen() {
             },
             {
                 key: 'access',
+                fields: ['permissions'],
                 label: 'Da acceso a',
                 searchable: false,
                 filterable: false,
@@ -114,6 +118,7 @@ export default function RolesScreen() {
             },
             {
                 key: 'users',
+                fields: ['user_count'],
                 label: 'Usuarios',
                 align: 'right',
                 searchable: false,
@@ -123,6 +128,7 @@ export default function RolesScreen() {
             },
             {
                 key: 'created',
+                fields: ['created_at'],
                 label: 'Creado',
                 sortable: true,
                 searchable: false,
@@ -134,10 +140,16 @@ export default function RolesScreen() {
         [tree],
     );
 
+    // La fila trae solo las columnas visibles: el formulario carga el rol completo.
+    const openEdit = (role: Role) =>
+        fetchRoleDetail(role.id)
+            .then(setEditing)
+            .catch((error) => toast.error(messageOf(error)));
+
     const askDelete = (role: Role) =>
         confirm({
             title: 'Eliminar rol',
-            message: `Se eliminará el rol "${role.name}". Nadie lo tiene asignado.`,
+            message: `Se eliminará el rol "${role.name}". Si algún usuario lo tiene, no se podrá eliminar hasta cambiarlo de rol.`,
             confirmLabel: 'Eliminar',
             tone: 'danger',
             action: async () => {
@@ -168,9 +180,8 @@ export default function RolesScreen() {
             rowNumbers
             rows={list.rows}
             loading={list.loading}
-            loadingMore={list.loadingMore}
-            hasMore={list.hasMore}
-            onLoadMore={list.loadMore}
+            pager={list.pager}
+            requiredFields={['id', 'name', 'is_system']}
             error={list.error}
             onRetry={list.retry}
             onQuery={setQuery}
@@ -183,7 +194,7 @@ export default function RolesScreen() {
                         <RowAction
                             label="Ver permisos"
                             tone="view"
-                            onClick={() => setEditing(role)}
+                            onClick={() => openEdit(role)}
                         >
                             <Eye className="size-4" aria-hidden />
                         </RowAction>
@@ -191,7 +202,7 @@ export default function RolesScreen() {
                         <RowAction
                             label="Editar"
                             tone="edit"
-                            onClick={() => setEditing(role)}
+                            onClick={() => openEdit(role)}
                         >
                             <Pencil className="size-4" aria-hidden />
                         </RowAction>
@@ -200,8 +211,6 @@ export default function RolesScreen() {
                         <RowAction
                             label="Eliminar"
                             tone="danger"
-                            disabled={role.user_count > 0}
-                            disabledReason={`Lo tienen ${role.user_count} usuario(s): cámbialos de rol primero.`}
                             onClick={() => askDelete(role)}
                         >
                             <Trash2 className="size-4" aria-hidden />

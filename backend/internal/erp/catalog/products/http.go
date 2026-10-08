@@ -104,6 +104,11 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 
+	fields, ok := web.BindFields[productResource](c)
+	if !ok {
+		return
+	}
+
 	page, err := h.service.List(c.Request.Context(), ProductFilter{
 		Search:     q.Search,
 		SKU:        q.SKU,
@@ -122,12 +127,12 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 
-	data := make([]productResource, len(page.Data))
+	data := make([]any, len(page.Data))
 	for i, p := range page.Data {
-		data[i] = resource(p)
+		data[i] = web.Pick(resource(p), fields)
 	}
 
-	c.JSON(http.StatusOK, pagination.Page[productResource]{Data: data, Meta: page.Meta})
+	c.JSON(http.StatusOK, pagination.Page[any]{Data: data, Meta: page.Meta})
 }
 
 func (h *Handler) Show(c *gin.Context) {
