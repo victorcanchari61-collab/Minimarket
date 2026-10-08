@@ -39,6 +39,19 @@ export function setActiveBranchId(id: number): void {
     listeners.forEach((listener) => listener());
 }
 
+const changeListeners = new Set<() => void>();
+
+/** Avisa que las sucursales cambiaron (se creó, editó o eliminó una): el selector de la cuenta las vuelve a pedir. */
+export function notifyBranchesChanged(): void {
+    changeListeners.forEach((listener) => listener());
+}
+
+export function subscribeBranchesChanged(listener: () => void): () => void {
+    changeListeners.add(listener);
+
+    return () => changeListeners.delete(listener);
+}
+
 export function subscribeActiveBranch(listener: () => void): () => void {
     listeners.add(listener);
 

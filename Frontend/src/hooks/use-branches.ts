@@ -5,6 +5,7 @@ import {
     getActiveBranchId,
     setActiveBranchId,
     subscribeActiveBranch,
+    subscribeBranchesChanged,
 } from '@/lib/branches';
 import type { Branch } from '@/lib/branches';
 
@@ -29,26 +30,34 @@ export function useBranches() {
     );
 
     useEffect(() => {
-        const token = getToken();
-
-        if (!token) {
-            return;
-        }
-
         let alive = true;
 
-        fetchBranches()
-            .then((next) => {
-                cached = { token, branches: next };
+        const load = () => {
+            const token = getToken();
 
-                if (alive) {
-                    setBranches(next);
-                }
-            })
-            .catch(() => undefined); // un 401 lo maneja useAuthUser
+            if (!token) {
+                return;
+            }
+
+            fetchBranches()
+                .then((next) => {
+                    cached = { token, branches: next };
+
+                    if (alive) {
+                        setBranches(next);
+                    }
+                })
+                .catch(() => undefined); // un 401 lo maneja useAuthUser
+        };
+
+        load();
+
+        // Si se crea, edita o elimina una sucursal, el selector se actualiza.
+        const unsubscribe = subscribeBranchesChanged(load);
 
         return () => {
             alive = false;
+            unsubscribe();
         };
     }, []);
 

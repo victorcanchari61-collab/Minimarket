@@ -483,7 +483,7 @@ func addBranch(t *testing.T, pool *pgxpool.Pool, code, name string) int64 {
 	var id int64
 
 	err := pool.QueryRow(context.Background(),
-		`INSERT INTO branches (code, name) VALUES ($1, $2) RETURNING id`, code, name).Scan(&id)
+		`INSERT INTO branches (company_id, code, name) VALUES ((SELECT id FROM companies LIMIT 1), $1, $2) RETURNING id`, code, name).Scan(&id)
 	if err != nil {
 		t.Fatal(err)
 	}

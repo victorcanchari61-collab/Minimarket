@@ -37,6 +37,11 @@ Requiere Go 1.27 y PostgreSQL (base `minimarket`). En Windows, `iniciar-api.bat`
 | POST · GET | `/api/access/requests` | pedir acceso a una acción (cualquiera con sesión) · listar solicitudes (20 con cursor, `status`) |
 | GET · POST | `/api/access/requests/summary` · `/:id/approve` · `/:id/reject` | cuántas esperan · aprobar (da el permiso directo) · rechazar |
 | GET · PUT · DELETE | `/api/roles/:id` | ver, editar (nombre, descripción y permisos) y eliminar |
+| GET · PUT | `/api/company` | datos de la empresa (el RUC se valida con su dígito verificador) |
+| GET · POST | `/api/branches` | sucursales (administración): 20 por petición con cursor (`search`, `kind`, `status`, `sort`, `direction`) · alta |
+| GET · PUT · DELETE | `/api/branches/:id` · `/api/branches/summary` | ver, editar y eliminar (solo si no tiene almacenes ni usuarios) · cifras de la cabecera |
+| GET · POST | `/api/warehouses` | almacenes: 20 por petición con cursor (`search`, `branch_id`, `status`, `sort`) · alta |
+| GET · PUT · DELETE | `/api/warehouses/:id` · `/summary` · `/branches` | ver, editar y eliminar · cifras de la cabecera · sucursales donde poner un almacén |
 | GET | `/api/company/branches` | sucursales activas (cualquier usuario con sesión; alimenta el selector de sucursal) |
 | GET | `/api/permissions/me` | acciones que puede hacer el usuario (arma el menú) |
 | GET | `/api/permissions/catalog` | árbol completo de permisos (sistema → módulo → submódulo → acciones) |
@@ -57,6 +62,8 @@ internal/
   config/roles/permissions/      Configuraciones › Roles y permisos › Permisos por sistema (accesos y solicitudes)
   config/roles/roles/            Configuraciones › Roles y permisos › Roles
   config/users/list/             Configuraciones › Usuarios › Lista de usuarios
+  config/company/info/           Configuraciones › Empresa y sucursales › Datos de la empresa
+  config/company/warehouses/     Configuraciones › Empresa y sucursales › Almacenes
   config/company/branches/        Configuraciones › Empresa y sucursales › Sucursales
   erp/catalog/units/             otro submódulo (Unidades y presentaciones)
   server/                        enrutador (compone los submódulos)

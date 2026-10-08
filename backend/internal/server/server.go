@@ -13,6 +13,8 @@ import (
 
 	"minimarket/backend/internal/auth"
 	"minimarket/backend/internal/config/company/branches"
+	"minimarket/backend/internal/config/company/info"
+	"minimarket/backend/internal/config/company/warehouses"
 	access "minimarket/backend/internal/config/roles/permissions"
 	"minimarket/backend/internal/config/roles/roles"
 	users "minimarket/backend/internal/config/users/list"
@@ -78,7 +80,9 @@ func New(cfg config.Config, pool *pgxpool.Pool) *gin.Engine {
 	permission.NewHandler(permissions).Routes(protected, can)
 
 	// Configuraciones.
-	branches.New(pool).Routes(protected)
+	branches.New(pool).Routes(protected, can)
+	info.New(pool).Routes(protected, can)
+	warehouses.New(pool).Routes(protected, can)
 	users.New(pool).Routes(protected, can)
 	roles.New(pool, permissions.Valid).Routes(protected, can)
 	access.New(pool, access.Rules{

@@ -22,7 +22,7 @@ func (s *Store) ListForUser(ctx context.Context, userID int64) ([]Branch, error)
 	rows, err := s.db.Query(ctx, `
 		SELECT b.id, b.code, b.name, b.address, b.kind
 		FROM branches b
-		WHERE b.active
+		WHERE b.active AND b.deleted_at IS NULL
 		  AND (EXISTS (SELECT 1 FROM users u WHERE u.id = $1 AND u.all_branches)
 		       OR EXISTS (SELECT 1 FROM user_branches ub WHERE ub.user_id = $1 AND ub.branch_id = b.id))
 		ORDER BY b.name, b.id`, userID)

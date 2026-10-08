@@ -73,7 +73,7 @@ func (s *Store) Roles(ctx context.Context) ([]RoleRef, error) {
 
 // Branches son las sucursales activas que se pueden asignar a un usuario.
 func (s *Store) Branches(ctx context.Context) ([]BranchRef, error) {
-	rows, err := s.db.Query(ctx, `SELECT id, name, kind FROM branches WHERE active ORDER BY name, id`)
+	rows, err := s.db.Query(ctx, `SELECT id, name, kind FROM branches WHERE active AND deleted_at IS NULL ORDER BY name, id`)
 	if err != nil {
 		return nil, err
 	}

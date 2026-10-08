@@ -81,8 +81,15 @@ func Pool(t *testing.T) *pgxpool.Pool {
 
 	// Las unidades son datos de referencia de la migración: se conservan.
 	if _, err := pool.Exec(ctx, `
-		TRUNCATE api_tokens, users, products, product_categories, branches RESTART IDENTITY CASCADE`); err != nil {
+		TRUNCATE api_tokens, users, products, product_categories, warehouses, branches RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("limpieza: %v", err)
+	}
+
+	// La empresa es un dato de la migración: se conserva, pero vuelve a su estado inicial.
+	if _, err := pool.Exec(ctx, `
+		UPDATE companies SET ruc = NULL, legal_name = 'Mi empresa', trade_name = '',
+		       fiscal_address = '', phone = '', email = ''`); err != nil {
+		t.Fatalf("limpieza de empresa: %v", err)
 	}
 
 	// Los roles del sistema (Administrador) son datos de la migración: se

@@ -13,11 +13,12 @@ func TestListReturnsOnlyActiveBranchesByName(t *testing.T) {
 	token := testutil.Login(t, router, pool)
 
 	_, err := pool.Exec(context.Background(), `
-		INSERT INTO branches (code, name, kind, active) VALUES
+		INSERT INTO branches (company_id, code, name, kind, active)
+		SELECT (SELECT id FROM companies LIMIT 1), v.* FROM (VALUES
 			('C02', 'Sucursal Norte', 'store', TRUE),
 			('C01', 'Sucursal Centro', 'store', TRUE),
 			('CD1', 'Centro de distribución', 'distribution', TRUE),
-			('C99', 'Sucursal Cerrada', 'store', FALSE)`)
+			('C99', 'Sucursal Cerrada', 'store', FALSE)) AS v`)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -305,7 +305,10 @@ Además: `go vet ./...` y `gofmt` limpios.
 | Configuraciones › Roles y permisos › Permisos por sistema: accesos por rol y por persona (permisos directos y denegaciones sobre lo que dan sus roles) y solicitudes de acceso (pedir, aprobar, rechazar); nadie cambia sus propios permisos y a un administrador no se le toca | Hecho |
 | Sucursales de cada usuario (una, varias o todas; los administradores, todas) | Hecho |
 | Validar en el servidor la sucursal activa (`X-Branch-Id`) | Pendiente: se hace con el primer módulo que dependa de la sucursal (Inventario); la regla de a qué sucursales entra cada usuario ya existe |
-| Empresa y sucursales: CRUD, datos de la empresa y almacenes | Pendiente |
+| Configuraciones › Empresa y sucursales › Datos de la empresa (razón social, RUC con dígito verificador, dirección fiscal; una empresa hoy, esquema listo para varias) | Hecho |
+| Configuraciones › Empresa y sucursales › Sucursales: listado de 20 con cursor, alta, edición (tipo tienda o centro de distribución, establecimiento SUNAT, activar o desactivar) y baja solo si no tiene almacenes ni usuarios | Hecho |
+| Configuraciones › Empresa y sucursales › Almacenes: varios por sucursal, código único dentro de la sucursal | Hecho |
+| Terminales y series, Auditoría, Integraciones (SUNAT, Bancos, APIs y webhooks) | Pendiente |
 | ERP › Inventario con kardex | Pendiente |
 | Eventos entre sistemas y trabajos en segundo plano (SUNAT, CRM, BI) | Pendiente |
 | Tipo decimal para cálculos de dinero y cantidades | Pendiente (se decide al primer cálculo) |
