@@ -12,6 +12,7 @@ var (
 	errDuplicateEmail = errors.New("users: correo repetido")
 	errUnknownRole    = errors.New("users: rol inexistente")
 	errDuplicateDoc   = errors.New("users: documento repetido")
+	errUnknownBranch  = errors.New("users: sucursal inexistente")
 )
 
 func userNotFound() *apperror.Error {

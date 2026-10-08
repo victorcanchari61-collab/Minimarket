@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { TriCheckbox } from '@/components/ui/tri-checkbox';
 import {
@@ -17,6 +17,8 @@ type PermissionTreeProps = {
     onChange: (next: Set<string>) => void;
     /** Solo para mirar (el rol Administrador). */
     readOnly?: boolean;
+    /** Acciones que la persona ya recibe de sus roles: se marcan con un escudo. */
+    inherited?: Set<string>;
 };
 
 /**
@@ -29,16 +31,11 @@ export function PermissionTree({
     selected,
     onChange,
     readOnly,
+    inherited,
 }: PermissionTreeProps) {
-    // Arrancan abiertos los sistemas que ya tienen algo marcado.
-    const [open, setOpen] = useState<Set<string>>(
-        () =>
-            new Set(
-                tree
-                    .filter((system) => stateOf(system, selected) !== 'unchecked')
-                    .map((system) => system.code),
-            ),
-    );
+    // Arranca contraído: son ocho sistemas con cientos de acciones; se abre el
+    // que se quiere revisar.
+    const [open, setOpen] = useState<Set<string>>(() => new Set());
 
     const toggleOpen = (code: string) =>
         setOpen((current) => {
@@ -118,6 +115,7 @@ export function PermissionTree({
                                                         selected={selected}
                                                         onChange={onChange}
                                                         readOnly={readOnly}
+                                                        inherited={inherited}
                                                     />
                                                 ),
                                             )}
@@ -138,11 +136,13 @@ function SubmoduleRow({
     selected,
     onChange,
     readOnly,
+    inherited,
 }: {
     submodule: CatalogNode;
     selected: Set<string>;
     onChange: (next: Set<string>) => void;
     readOnly?: boolean;
+    inherited?: Set<string>;
 }) {
     return (
         <li className="grid gap-x-4 gap-y-1.5 py-2 sm:grid-cols-[15rem_1fr]">
@@ -180,6 +180,14 @@ function SubmoduleRow({
                         }
                         disabled={readOnly}
                         labelClassName="text-[13px]"
+                        trailing={
+                            inherited?.has(action.code) ? (
+                                <ShieldCheck
+                                    className="size-3.5 text-ink-soft"
+                                    aria-label="Lo recibe de su rol"
+                                />
+                            ) : undefined
+                        }
                     />
                 ))}
             </div>

@@ -32,6 +32,10 @@ Requiere Go 1.27 y PostgreSQL (base `minimarket`). En Windows, `iniciar-api.bat`
 | PUT | `/api/users/:id/password` | reiniciar contraseña (cierra las sesiones del usuario) |
 | GET | `/api/users/summary` · `/api/users/roles` | activos e inactivos · roles para el formulario |
 | GET · POST | `/api/roles` | roles: 20 por petición con cursor (`search`, `sort`, `direction`) · alta con sus permisos |
+| GET · PUT | `/api/access/roles` · `/api/access/roles/:id` | accesos por rol: lista de roles con sus permisos · reemplazar los permisos de un rol |
+| GET · PUT | `/api/access/users` · `/api/access/users/:id` | accesos por persona: buscar (20) · ver lo que viene de sus roles, lo directo y lo denegado · reemplazar lo directo y lo denegado |
+| POST · GET | `/api/access/requests` | pedir acceso a una acción (cualquiera con sesión) · listar solicitudes (20 con cursor, `status`) |
+| GET · POST | `/api/access/requests/summary` · `/:id/approve` · `/:id/reject` | cuántas esperan · aprobar (da el permiso directo) · rechazar |
 | GET · PUT · DELETE | `/api/roles/:id` | ver, editar (nombre, descripción y permisos) y eliminar |
 | GET | `/api/company/branches` | sucursales activas (cualquier usuario con sesión; alimenta el selector de sucursal) |
 | GET | `/api/permissions/me` | acciones que puede hacer el usuario (arma el menú) |
@@ -50,6 +54,7 @@ internal/
   auth/                          login por token
   permission/                    catálogo de permisos, regla de acceso y guardia por ruta
   erp/catalog/products/          un submódulo = un paquete: http.go service.go store.go list_query.go types.go errors.go wire.go
+  config/roles/permissions/      Configuraciones › Roles y permisos › Permisos por sistema (accesos y solicitudes)
   config/roles/roles/            Configuraciones › Roles y permisos › Roles
   config/users/list/             Configuraciones › Usuarios › Lista de usuarios
   config/company/branches/        Configuraciones › Empresa y sucursales › Sucursales

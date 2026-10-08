@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 export interface TabItem {
     id: string;
     label: string;
+    /** Icono a la izquierda del texto (de 16 px: `className="size-4"`). */
     icon?: ReactNode;
     /** Número al costado: cuántos registros tiene la pestaña. */
     badge?: number;
@@ -13,67 +14,88 @@ export interface TabsProps {
     items: TabItem[];
     active: string;
     onChange: (id: string) => void;
+    /** Texto para lectores de pantalla: qué es este grupo de pestañas. */
+    label?: string;
     className?: string;
 }
 
 /**
- * Pestañas de una vista.
+ * Pestañas de una vista, en forma de cápsula: la activa se rellena con el color
+ * del sistema y el resto quedan en reposo. Con ícono y, si hace falta, una
+ * cifra (cuántas solicitudes esperan).
  *
- * Se usan cuando varias tablas pequeñas pertenecen al mismo tema y no merecen
- * una entrada propia en el menú.
+ * Se usan cuando varias vistas pequeñas pertenecen al mismo tema y no merecen
+ * una entrada propia en el menú. Se navega con las flechas del teclado.
  */
-export function Tabs({ items, active, onChange, className }: TabsProps) {
+export function Tabs({ items, active, onChange, label, className }: TabsProps) {
+    const move = (from: number, step: number) => {
+        const next = items[(from + step + items.length) % items.length];
+
+        onChange(next.id);
+        document.getElementById(tabId(next.id))?.focus();
+    };
+
     return (
         <div
             role="tablist"
+            aria-label={label}
             className={cn(
-                // Se desliza en móvil: cuatro pestañas no entran en 390px.
-                'no-scrollbar -mx-4 flex gap-1 overflow-x-auto border-b border-line px-4 sm:mx-0 sm:px-0',
+                // En móvil se desliza: tres pestañas con ícono no entran en 360px.
+                'no-scrollbar -mx-4 flex overflow-x-auto px-4 sm:mx-0 sm:px-0',
                 className,
             )}
         >
-            {items.map((item) => {
-                const isActive = item.id === active;
+            <div className="inline-flex shrink-0 gap-1 rounded-full border border-line bg-white p-1">
+                {items.map((item, index) => {
+                    const isActive = item.id === active;
 
-                return (
-                    <button
-                        key={item.id}
-                        role="tab"
-                        type="button"
-                        aria-selected={isActive}
-                        onClick={() => onChange(item.id)}
-                        className={cn(
-                            'relative flex shrink-0 items-center gap-2 px-3 py-2.5 text-sm whitespace-nowrap',
-                            isActive
-                                ? 'font-semibold text-accent-ink'
-                                : 'text-ink-muted hover:text-ink',
-                        )}
-                    >
-                        {item.icon}
-                        {item.label}
-                        {item.badge !== undefined && (
-                            <span
-                                className={cn(
-                                    'rounded-full px-1.5 py-0.5 text-[11px] font-semibold',
-                                    isActive
-                                        ? 'bg-accent-soft text-accent-ink'
-                                        : 'bg-surface-alt text-ink-muted',
-                                )}
-                            >
-                                {item.badge}
-                            </span>
-                        )}
-
-                        {/* La línea inferior marca la activa sin mover el texto. */}
-                        {isActive && (
-                            <span
-                                aria-hidden="true"
-                                className="absolute inset-x-0 -bottom-px h-0.5 bg-accent"
-                            />
-                        )}
-                    </button>
-                );
-            })}
+                    return (
+                        <button
+                            key={item.id}
+                            id={tabId(item.id)}
+                            role="tab"
+                            type="button"
+                            aria-selected={isActive}
+                            tabIndex={isActive ? 0 : -1}
+                            onClick={() => onChange(item.id)}
+                            onKeyDown={(event) => {
+                                if (event.key === 'ArrowRight') {
+                                    event.preventDefault();
+                                    move(index, 1);
+                                } else if (event.key === 'ArrowLeft') {
+                                    event.preventDefault();
+                                    move(index, -1);
+                                }
+                            }}
+                            className={cn(
+                                // Mismo borde que el contenedor: una cápsula dentro de otra.
+                                'flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap outline-none',
+                                'transition-colors focus-visible:ring-4 focus-visible:ring-accent-ring',
+                                isActive
+                                    ? 'bg-accent text-white shadow-sm'
+                                    : 'text-ink-muted hover:bg-surface-alt hover:text-ink',
+                            )}
+                        >
+                            {item.icon}
+                            {item.label}
+                            {item.badge !== undefined && (
+                                <span
+                                    className={cn(
+                                        'min-w-5 rounded-full px-1.5 py-0.5 text-center text-[11px] leading-none font-semibold tabular-nums',
+                                        isActive
+                                            ? 'bg-white/25 text-white'
+                                            : 'bg-accent-soft text-accent-ink',
+                                    )}
+                                >
+                                    {item.badge}
+                                </span>
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
         </div>
     );
 }
+
+const tabId = (id: string) => `tab-${id}`;

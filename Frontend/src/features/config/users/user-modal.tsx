@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ApiError } from '@/lib/api';
 import { createUser, updateUser } from '@/features/config/users/users-api';
 import type {
+    BranchOption,
     DocumentType,
     SystemUser,
     UserRole,
@@ -46,6 +47,8 @@ type UserModalProps = {
     /** null = usuario nuevo. */
     user: SystemUser | null;
     roles: UserRole[];
+    /** Las sucursales que se pueden asignar. */
+    branches: BranchOption[];
     /** Es el usuario de la sesión: no puede desactivarse a sí mismo. */
     isSelf: boolean;
     onClose: () => void;
@@ -56,6 +59,7 @@ type UserModalProps = {
 export function UserModal({
     user,
     roles,
+    branches,
     isSelf,
     onClose,
     onSaved,
@@ -75,12 +79,29 @@ export function UserModal({
     const [roleIds, setRoleIds] = useState<number[]>(
         user?.roles.map((role) => role.id) ?? [],
     );
+    const [allBranches, setAllBranches] = useState(user?.all_branches ?? false);
+    const [branchIds, setBranchIds] = useState<number[]>(
+        user?.branches.map((branch) => branch.id) ?? [],
+    );
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const toast = useToast();
 
     const toggleRole = (id: number) =>
         setRoleIds((current) =>
+            current.includes(id)
+                ? current.filter((value) => value !== id)
+                : [...current, id],
+        );
+
+    // Un administrador trabaja en toda la cadena: no hay nada que elegir.
+    const isAdmin = roles.some(
+        (role) => role.is_admin && roleIds.includes(role.id),
+    );
+    const everywhere = isAdmin || allBranches;
+
+    const toggleBranch = (id: number) =>
+        setBranchIds((current) =>
             current.includes(id)
                 ? current.filter((value) => value !== id)
                 : [...current, id],
@@ -102,6 +123,8 @@ export function UserModal({
             next.document_number = DOCUMENT_FORMAT[documentType].hint;
         if (!user && password.length < 8)
             next.password = 'La contraseña debe tener al menos 8 caracteres.';
+        if (!everywhere && branchIds.length === 0)
+            next.branch_ids = 'Elige al menos una sucursal o marca todas.';
 
         setErrors(next);
 
@@ -118,6 +141,8 @@ export function UserModal({
             position: position.trim(),
             status,
             role_ids: roleIds,
+            all_branches: everywhere,
+            branch_ids: everywhere ? [] : branchIds,
         };
 
         setSaving(true);
@@ -266,6 +291,39 @@ export function UserModal({
                     <p className="mt-2 text-xs text-ink-muted">
                         El usuario recibe todos los permisos de sus roles. Los
                         permisos individuales se dan en Roles y permisos.
+                    </p>
+                </fieldset>
+
+                <fieldset className="sm:col-span-2">
+                    <legend className="mb-2 text-sm font-medium text-ink">
+                        Sucursales
+                    </legend>
+                    <Checkbox
+                        label="Acceso a todas las sucursales"
+                        checked={everywhere}
+                        disabled={isAdmin}
+                        onChange={() => setAllBranches((value) => !value)}
+                    />
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        {branches.map((branch) => (
+                            <Checkbox
+                                key={branch.id}
+                                label={branch.name}
+                                checked={everywhere || branchIds.includes(branch.id)}
+                                disabled={everywhere}
+                                onChange={() => toggleBranch(branch.id)}
+                            />
+                        ))}
+                    </div>
+                    {errors.branch_ids && (
+                        <p className="mt-1.5 text-xs text-danger">
+                            {errors.branch_ids}
+                        </p>
+                    )}
+                    <p className="mt-2 text-xs text-ink-muted">
+                        {isAdmin
+                            ? 'Los administradores trabajan en todas las sucursales.'
+                            : 'Solo podrá trabajar en las sucursales marcadas. “Todas” incluye también las que se creen después.'}
                     </p>
                 </fieldset>
 

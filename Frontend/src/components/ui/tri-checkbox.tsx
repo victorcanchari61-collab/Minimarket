@@ -1,4 +1,5 @@
 import { Check, Minus } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export type TriState = 'checked' | 'unchecked' | 'mixed';
@@ -10,6 +11,8 @@ export interface TriCheckboxProps {
     disabled?: boolean;
     className?: string;
     labelClassName?: string;
+    /** Algo pequeño después del texto (un marcador, un contador). */
+    trailing?: ReactNode;
 }
 
 /**
@@ -23,6 +26,7 @@ export function TriCheckbox({
     disabled,
     className,
     labelClassName,
+    trailing,
 }: TriCheckboxProps) {
     return (
         <button
@@ -54,6 +58,7 @@ export function TriCheckbox({
                 )}
             </span>
             <span className={labelClassName}>{label}</span>
+            {trailing}
         </button>
     );
 }

@@ -56,8 +56,15 @@ func (d DocumentType) Label() string {
 }
 
 type RoleRef struct {
+	ID      int64
+	Name    string
+	IsAdmin bool // el rol Administrador: da acceso a todas las sucursales
+}
+
+type BranchRef struct {
 	ID   int64
 	Name string
+	Kind string
 }
 
 type User struct {
@@ -70,6 +77,8 @@ type User struct {
 	Phone          string
 	Position       string // cargo
 	Status         Status
+	AllBranches    bool // trabaja en toda la cadena
+	Branches       []BranchRef
 	Roles          []RoleRef
 	LastLoginAt    *time.Time
 	CreatedAt      time.Time
@@ -87,6 +96,8 @@ type Input struct {
 	Position       string
 	Status         Status
 	RoleIDs        []int64
+	AllBranches    bool
+	BranchIDs      []int64
 }
 
 // Filter son los filtros, el orden y el cursor del listado. Cada campo

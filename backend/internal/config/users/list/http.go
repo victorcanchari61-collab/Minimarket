@@ -2,7 +2,6 @@ package list
 
 import (
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -31,6 +30,7 @@ func (h *Handler) Routes(api *gin.RouterGroup, can web.Guard) {
 	api.POST("/users", can("config.users.list.create"), h.Create)
 	api.GET("/users/summary", view, h.Summary) // antes de :id
 	api.GET("/users/roles", view, h.Roles)
+	api.GET("/users/branches", view, h.Branches)
 	api.GET("/users/:id", view, h.Show)
 	api.PUT("/users/:id", can("config.users.list.edit"), h.Update)
 	api.PUT("/users/:id/password", can("config.users.list.reset_password"), h.ResetPassword)
@@ -58,6 +58,8 @@ type profileRequest struct {
 	Position       string  `json:"position" binding:"omitempty,max=100"`
 	Status         string  `json:"status" binding:"omitempty,oneof=active inactive"`
 	RoleIDs        []int64 `json:"role_ids" binding:"omitempty,max=50,dive,gt=0"`
+	AllBranches    bool    `json:"all_branches"`
+	BranchIDs      []int64 `json:"branch_ids" binding:"omitempty,max=200,dive,gt=0"`
 }
 
 func (r profileRequest) input() Input {
@@ -66,6 +68,7 @@ func (r profileRequest) input() Input {
 		DocumentType: DocumentType(r.DocumentType), DocumentNumber: r.DocumentNumber,
 		Phone: r.Phone, Position: r.Position,
 		Status: Status(r.Status), RoleIDs: r.RoleIDs,
+		AllBranches: r.AllBranches, BranchIDs: r.BranchIDs,
 	}
 }
 
@@ -83,31 +86,45 @@ type passwordRequest struct {
 // --- salida -----------------------------------------------------------------
 
 type roleResource struct {
+	ID      int64  `json:"id"`
+	Name    string `json:"name"`
+	IsAdmin bool   `json:"is_admin"`
+}
+
+type branchResource struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
+	Kind string `json:"kind"`
 }
 
 type userResource struct {
-	ID                int64          `json:"id"`
-	Code              string         `json:"code"`
-	Name              string         `json:"name"`
-	Email             string         `json:"email"`
-	DocumentType      string         `json:"document_type"`
-	DocumentTypeLabel string         `json:"document_type_label"`
-	DocumentNumber    string         `json:"document_number"`
-	Phone             string         `json:"phone"`
-	Position          string         `json:"position"`
-	Status            string         `json:"status"`
-	StatusLabel       string         `json:"status_label"`
-	Roles             []roleResource `json:"roles"`
-	LastLoginAt       *time.Time     `json:"last_login_at"`
-	CreatedAt         time.Time      `json:"created_at"`
+	ID                int64            `json:"id"`
+	Code              string           `json:"code"`
+	Name              string           `json:"name"`
+	Email             string           `json:"email"`
+	DocumentType      string           `json:"document_type"`
+	DocumentTypeLabel string           `json:"document_type_label"`
+	DocumentNumber    string           `json:"document_number"`
+	Phone             string           `json:"phone"`
+	Position          string           `json:"position"`
+	Status            string           `json:"status"`
+	StatusLabel       string           `json:"status_label"`
+	AllBranches       bool             `json:"all_branches"`
+	Branches          []branchResource `json:"branches"`
+	Roles             []roleResource   `json:"roles"`
+	LastLoginAt       *time.Time       `json:"last_login_at"`
+	CreatedAt         time.Time        `json:"created_at"`
 }
 
 func resource(u User) userResource {
 	roles := make([]roleResource, len(u.Roles))
 	for i, r := range u.Roles {
-		roles[i] = roleResource{ID: r.ID, Name: r.Name}
+		roles[i] = roleResource{ID: r.ID, Name: r.Name, IsAdmin: r.IsAdmin}
+	}
+
+	branches := make([]branchResource, len(u.Branches))
+	for i, b := range u.Branches {
+		branches[i] = branchResource{ID: b.ID, Name: b.Name, Kind: b.Kind}
 	}
 
 	return userResource{
@@ -115,6 +132,7 @@ func resource(u User) userResource {
 		DocumentType: string(u.DocumentType), DocumentTypeLabel: u.DocumentType.Label(),
 		DocumentNumber: u.DocumentNumber, Phone: u.Phone, Position: u.Position,
 		Status: string(u.Status), StatusLabel: u.Status.Label(),
+		AllBranches: u.AllBranches, Branches: branches,
 		Roles: roles, LastLoginAt: u.LastLoginAt, CreatedAt: u.CreatedAt,
 	}
 }
@@ -239,49 +257,4 @@ func (h *Handler) Delete(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Usuario eliminado."})
-}
-
-func (h *Handler) Summary(c *gin.Context) {
-	summary, err := h.service.Summary(c.Request.Context())
-	if err != nil {
-		_ = c.Error(err)
-
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": gin.H{
-		"active":         summary.Active,
-		"inactive":       summary.Inactive,
-		"administrators": summary.Administrators,
-		"without_roles":  summary.WithoutRoles,
-	}})
-}
-
-// GET /api/users/roles — los roles que se pueden elegir al crear o editar.
-func (h *Handler) Roles(c *gin.Context) {
-	roles, err := h.service.Roles(c.Request.Context())
-	if err != nil {
-		_ = c.Error(err)
-
-		return
-	}
-
-	data := make([]roleResource, len(roles))
-	for i, r := range roles {
-		data[i] = roleResource{ID: r.ID, Name: r.Name}
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": data})
-}
-
-// idParam lee :id; un id que no es número se trata como "no existe".
-func idParam(c *gin.Context) (int64, bool) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil || id <= 0 {
-		_ = c.Error(userNotFound())
-
-		return 0, false
-	}
-
-	return id, true
 }

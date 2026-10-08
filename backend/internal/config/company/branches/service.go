@@ -11,8 +11,7 @@ func NewService(store *Store) *Service {
 	return &Service{store: store}
 }
 
-// List son las sucursales en las que se puede trabajar. (Cuando cada usuario
-// tenga sus sucursales asignadas, se filtrará aquí.)
-func (s *Service) List(ctx context.Context) ([]Branch, error) {
-	return s.store.ListActive(ctx)
+// List son las sucursales en las que puede trabajar el usuario.
+func (s *Service) List(ctx context.Context, userID int64) ([]Branch, error) {
+	return s.store.ListForUser(ctx, userID)
 }

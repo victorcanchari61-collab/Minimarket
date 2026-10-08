@@ -15,14 +15,17 @@ func NewStore(db database.Executor) *Store {
 	return &Store{db: db}
 }
 
-// ListActive devuelve las sucursales en uso, por nombre. Es una lista de
-// consulta (como las unidades): una cadena tiene pocas y se muestran todas.
-func (s *Store) ListActive(ctx context.Context) ([]Branch, error) {
+// ListForUser devuelve las sucursales en uso a las que entra el usuario, por
+// nombre: todas si trabaja en toda la cadena, o solo las que se le asignaron.
+// Es una lista de consulta (como las unidades): se muestran todas.
+func (s *Store) ListForUser(ctx context.Context, userID int64) ([]Branch, error) {
 	rows, err := s.db.Query(ctx, `
-		SELECT id, code, name, address, kind
-		FROM branches
-		WHERE active
-		ORDER BY name, id`)
+		SELECT b.id, b.code, b.name, b.address, b.kind
+		FROM branches b
+		WHERE b.active
+		  AND (EXISTS (SELECT 1 FROM users u WHERE u.id = $1 AND u.all_branches)
+		       OR EXISTS (SELECT 1 FROM user_branches ub WHERE ub.user_id = $1 AND ub.branch_id = b.id))
+		ORDER BY b.name, b.id`, userID)
 	if err != nil {
 		return nil, err
 	}

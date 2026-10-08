@@ -17,6 +17,16 @@ func (s *Service) Catalog() *Catalog { return s.catalog }
 // Valid dice si un código de permiso existe en el catálogo ("*" incluido).
 func (s *Service) Valid(code string) bool { return s.catalog.Valid(code) }
 
+// Can dice si el usuario puede hacer esa acción, según lo que tiene hoy.
+func (s *Service) Can(ctx context.Context, userID int64, code string) (bool, error) {
+	grants, err := s.store.Grants(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+
+	return s.catalog.Allows(grants, code), nil
+}
+
 // Grants son los permisos de un usuario, tal como están hoy en la base.
 func (s *Service) Grants(ctx context.Context, userID int64) (Grants, error) {
 	return s.store.Grants(ctx, userID)

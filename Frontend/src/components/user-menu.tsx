@@ -173,7 +173,9 @@ export default function UserMenu({
 
                     {branches.length > 0 && (
                         <>
-                            <p className={SECTION}>Sucursales</p>
+                            <p className={SECTION}>
+                                {branches.length === 1 ? 'Tu sucursal' : 'Sucursales'}
+                            </p>
                             {branches.map((branch) => {
                                 const selected = branch.id === active?.id;
 
@@ -183,6 +185,8 @@ export default function UserMenu({
                                         type="button"
                                         role="menuitemradio"
                                         aria-checked={selected}
+                                        // Con una sola sucursal no hay nada que elegir.
+                                        disabled={branches.length === 1}
                                         onClick={() => {
                                             select(branch.id);
                                             setOpen(false);

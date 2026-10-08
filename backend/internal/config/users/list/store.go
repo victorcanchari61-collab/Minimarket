@@ -28,7 +28,13 @@ func NewStore(db database.Executor) *Store {
 const userSelect = `
 	SELECT u.id, u.code, u.name, u.email, u.active, u.created_at, u.last_login_at,
 	       COALESCE(u.document_type, ''), COALESCE(u.document_number, ''),
-	       COALESCE(u.phone, ''), COALESCE(u.position, ''),
+	       COALESCE(u.phone, ''), COALESCE(u.position, ''), u.all_branches,
+	       COALESCE((SELECT array_agg(b.id ORDER BY b.name, b.id)
+	                 FROM user_branches ub JOIN branches b ON b.id = ub.branch_id
+	                 WHERE ub.user_id = u.id), '{}'::bigint[]),
+	       COALESCE((SELECT array_agg(b.name ORDER BY b.name, b.id)
+	                 FROM user_branches ub JOIN branches b ON b.id = ub.branch_id
+	                 WHERE ub.user_id = u.id), '{}'::text[]),
 	       COALESCE((SELECT array_agg(r.id ORDER BY r.name, r.id)
 	                 FROM user_roles ur JOIN roles r ON r.id = ur.role_id
 	                 WHERE ur.user_id = u.id), '{}'::bigint[]),
@@ -44,10 +50,13 @@ func scanUser(row pgx.Row) (User, error) {
 		docType  string
 		roleIDs  []int64
 		roleName []string
+		brIDs    []int64
+		brNames  []string
 	)
 
 	err := row.Scan(&u.ID, &u.Code, &u.Name, &u.Email, &active, &u.CreatedAt, &u.LastLoginAt,
-		&docType, &u.DocumentNumber, &u.Phone, &u.Position, &roleIDs, &roleName)
+		&docType, &u.DocumentNumber, &u.Phone, &u.Position, &u.AllBranches, &brIDs, &brNames,
+		&roleIDs, &roleName)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return User{}, errNotFound
 	}
@@ -60,6 +69,11 @@ func scanUser(row pgx.Row) (User, error) {
 	u.Status = StatusInactive
 	if active {
 		u.Status = StatusActive
+	}
+
+	u.Branches = make([]BranchRef, len(brIDs))
+	for i, id := range brIDs {
+		u.Branches[i] = BranchRef{ID: id, Name: brNames[i]}
 	}
 
 	u.Roles = make([]RoleRef, len(roleIDs))
@@ -85,6 +99,8 @@ func translate(err error) error {
 		return errDuplicateDoc
 	case pgErr.Code == "23503" && pgErr.ConstraintName == "user_roles_role_id_fkey":
 		return errUnknownRole
+	case pgErr.Code == "23503" && pgErr.ConstraintName == "user_branches_branch_id_fkey":
+		return errUnknownBranch
 	default:
 		return err
 	}
@@ -100,11 +116,11 @@ func (s *Store) Insert(ctx context.Context, in Input, passwordHash string) (int6
 
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO users (name, email, email_verified_at, password_hash, active,
-		                   document_type, document_number, phone, position)
-		VALUES ($1, $2, now(), $3, $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, ''))
+		                   document_type, document_number, phone, position, all_branches)
+		VALUES ($1, $2, now(), $3, $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, ''), $9)
 		RETURNING id`,
 		in.Name, in.Email, passwordHash, in.Status == StatusActive,
-		string(in.DocumentType), in.DocumentNumber, in.Phone, in.Position,
+		string(in.DocumentType), in.DocumentNumber, in.Phone, in.Position, in.AllBranches,
 	).Scan(&id)
 
 	return id, translate(err)
@@ -115,10 +131,10 @@ func (s *Store) Update(ctx context.Context, id int64, in Input) error {
 		UPDATE users
 		SET name = $2, email = $3, active = $4,
 		    document_type = NULLIF($5, ''), document_number = NULLIF($6, ''),
-		    phone = NULLIF($7, ''), position = NULLIF($8, ''), updated_at = now()
+		    phone = NULLIF($7, ''), position = NULLIF($8, ''), all_branches = $9, updated_at = now()
 		WHERE id = $1 AND deleted_at IS NULL`,
 		id, in.Name, in.Email, in.Status == StatusActive,
-		string(in.DocumentType), in.DocumentNumber, in.Phone, in.Position)
+		string(in.DocumentType), in.DocumentNumber, in.Phone, in.Position, in.AllBranches)
 	if err != nil {
 		return translate(err)
 	}
@@ -139,6 +155,19 @@ func (s *Store) SetRoles(ctx context.Context, id int64, roleIDs []int64) error {
 	_, err := s.db.Exec(ctx, `
 		INSERT INTO user_roles (user_id, role_id)
 		SELECT $1, unnest($2::bigint[])`, id, roleIDs)
+
+	return translate(err)
+}
+
+// SetBranches deja al usuario con exactamente estas sucursales.
+func (s *Store) SetBranches(ctx context.Context, id int64, branchIDs []int64) error {
+	if _, err := s.db.Exec(ctx, `DELETE FROM user_branches WHERE user_id = $1`, id); err != nil {
+		return err
+	}
+
+	_, err := s.db.Exec(ctx, `
+		INSERT INTO user_branches (user_id, branch_id)
+		SELECT $1, unnest($2::bigint[])`, id, branchIDs)
 
 	return translate(err)
 }
@@ -180,90 +209,4 @@ func (s *Store) RevokeTokens(ctx context.Context, id int64) error {
 	_, err := s.db.Exec(ctx, `DELETE FROM api_tokens WHERE user_id = $1`, id)
 
 	return err
-}
-
-// --- administradores --------------------------------------------------------
-
-func (s *Store) LockAdmins(ctx context.Context) error {
-	_, err := s.db.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, adminLock)
-
-	return err
-}
-
-// IsActiveAdmin dice si el usuario es hoy un administrador que puede entrar.
-func (s *Store) IsActiveAdmin(ctx context.Context, id int64) (bool, error) {
-	var is bool
-
-	err := s.db.QueryRow(ctx, `
-		SELECT EXISTS (
-			SELECT 1 FROM users u
-			JOIN user_roles ur ON ur.user_id = u.id
-			JOIN roles r ON r.id = ur.role_id
-			WHERE u.id = $1 AND u.active AND u.deleted_at IS NULL AND r.code = 'admin')`, id).Scan(&is)
-
-	return is, err
-}
-
-// OtherActiveAdmins cuenta los administradores activos que no son este usuario.
-func (s *Store) OtherActiveAdmins(ctx context.Context, id int64) (int64, error) {
-	var n int64
-
-	err := s.db.QueryRow(ctx, `
-		SELECT count(DISTINCT u.id) FROM users u
-		JOIN user_roles ur ON ur.user_id = u.id
-		JOIN roles r ON r.id = ur.role_id
-		WHERE u.id <> $1 AND u.active AND u.deleted_at IS NULL AND r.code = 'admin'`, id).Scan(&n)
-
-	return n, err
-}
-
-// IncludesAdminRole dice si entre estos roles está el de Administrador.
-func (s *Store) IncludesAdminRole(ctx context.Context, roleIDs []int64) (bool, error) {
-	var is bool
-
-	err := s.db.QueryRow(ctx, `
-		SELECT EXISTS (SELECT 1 FROM roles WHERE code = 'admin' AND id = ANY($1::bigint[]))`,
-		roleIDs).Scan(&is)
-
-	return is, err
-}
-
-// --- consultas para la pantalla ---------------------------------------------
-
-func (s *Store) Roles(ctx context.Context) ([]RoleRef, error) {
-	rows, err := s.db.Query(ctx, `SELECT id, name FROM roles ORDER BY name, id`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	out := []RoleRef{}
-
-	for rows.Next() {
-		var r RoleRef
-		if err := rows.Scan(&r.ID, &r.Name); err != nil {
-			return nil, err
-		}
-
-		out = append(out, r)
-	}
-
-	return out, rows.Err()
-}
-
-func (s *Store) Summary(ctx context.Context) (Summary, error) {
-	var sum Summary
-
-	err := s.db.QueryRow(ctx, `
-		SELECT count(*) FILTER (WHERE u.active),
-		       count(*) FILTER (WHERE NOT u.active),
-		       count(*) FILTER (WHERE u.active AND EXISTS (
-		           SELECT 1 FROM user_roles ur JOIN roles r ON r.id = ur.role_id
-		           WHERE ur.user_id = u.id AND r.code = 'admin')),
-		       count(*) FILTER (WHERE NOT EXISTS (
-		           SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id))
-		FROM users u WHERE u.deleted_at IS NULL`,
-	).Scan(&sum.Active, &sum.Inactive, &sum.Administrators, &sum.WithoutRoles)
-
-	return sum, err
 }

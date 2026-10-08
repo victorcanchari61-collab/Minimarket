@@ -74,6 +74,12 @@ func (s *Store) AssignAdmin(ctx context.Context, userID int64) error {
 		INSERT INTO user_roles (user_id, role_id)
 		SELECT $1, id FROM roles WHERE code = $2
 		ON CONFLICT DO NOTHING`, userID, AdminRole)
+	if err != nil {
+		return err
+	}
+
+	// Un administrador trabaja en toda la cadena.
+	_, err = s.pool.Exec(ctx, `UPDATE users SET all_branches = TRUE WHERE id = $1`, userID)
 
 	return err
 }

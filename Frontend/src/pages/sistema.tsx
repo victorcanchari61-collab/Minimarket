@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react';
 import { SCREENS } from '@/features/screens';
 import SystemLayout from '@/layouts/system-layout';
 import AccessDenied from '@/components/system/access-denied';
+import { RequestAccessButton } from '@/features/config/permissions/request-access-button';
 import { findNav, slugify, viewCode, visibleNav } from '@/lib/navigation';
 import { usePageTitle } from '@/hooks/use-page-title';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -134,6 +135,14 @@ function SistemaView({ system: key, module, item }: Props) {
                     <AccessDenied
                         backTo="/sistemas"
                         backLabel="Volver al inicio"
+                        action={
+                            currentItem && currentModule ? (
+                                <RequestAccessButton
+                                    permission={viewCode(key, currentModule, currentItem)}
+                                    screen={`${system.name} › ${currentModule.label} › ${currentItem.label}`}
+                                />
+                            ) : undefined
+                        }
                     />
                 ) : Screen ? (
                     <div className="w-full">

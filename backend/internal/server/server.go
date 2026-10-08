@@ -13,6 +13,7 @@ import (
 
 	"minimarket/backend/internal/auth"
 	"minimarket/backend/internal/config/company/branches"
+	access "minimarket/backend/internal/config/roles/permissions"
 	"minimarket/backend/internal/config/roles/roles"
 	users "minimarket/backend/internal/config/users/list"
 	"minimarket/backend/internal/erp/catalog/products"
@@ -80,6 +81,11 @@ func New(cfg config.Config, pool *pgxpool.Pool) *gin.Engine {
 	branches.New(pool).Routes(protected)
 	users.New(pool).Routes(protected, can)
 	roles.New(pool, permissions.Valid).Routes(protected, can)
+	access.New(pool, access.Rules{
+		Valid:    permissions.Valid,
+		IsAction: permission.IsAction,
+		Allows:   permissions.Can,
+	}).Routes(protected, can)
 
 	// ERP › Catálogo y maestros.
 	products.New(pool).Routes(protected, can)

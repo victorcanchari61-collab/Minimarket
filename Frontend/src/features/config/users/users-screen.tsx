@@ -26,11 +26,13 @@ import { PasswordModal } from '@/features/config/users/password-modal';
 import { UserModal } from '@/features/config/users/user-modal';
 import {
     deleteUser,
+    fetchBranchOptions,
     fetchRoles,
     fetchUserSummary,
     fetchUsersPage,
 } from '@/features/config/users/users-api';
 import type {
+    BranchOption,
     SystemUser,
     UserRole,
     UserSummary,
@@ -62,6 +64,7 @@ export default function UsersScreen() {
 
     const [summary, setSummary] = useState<UserSummary | null>(null);
     const [roles, setRoles] = useState<UserRole[]>([]);
+    const [branchOptions, setBranchOptions] = useState<BranchOption[]>([]);
     // undefined = cerrado · null = usuario nuevo · SystemUser = editando
     const [editing, setEditing] = useState<SystemUser | null | undefined>(
         undefined,
@@ -80,6 +83,7 @@ export default function UsersScreen() {
     useEffect(() => {
         loadSummary();
         fetchRoles().then(setRoles).catch(() => undefined);
+        fetchBranchOptions().then(setBranchOptions).catch(() => undefined);
     }, [loadSummary]);
 
     const columns = useMemo<DataTableColumn<SystemUser>[]>(
@@ -156,6 +160,32 @@ export default function UsersScreen() {
                                     {role.name}
                                 </Badge>
                             ))}
+                        </span>
+                    ),
+            },
+            {
+                key: 'branches',
+                label: 'Sucursales',
+                searchable: false,
+                filterable: false,
+                width: 200,
+                render: (user) =>
+                    user.all_branches ? (
+                        <Badge tone="info">Todas</Badge>
+                    ) : user.branches.length === 0 ? (
+                        <span className="text-ink-muted">Ninguna</span>
+                    ) : (
+                        <span className="flex flex-wrap gap-1">
+                            {user.branches.slice(0, 2).map((branch) => (
+                                <Badge key={branch.id} tone="neutral">
+                                    {branch.name}
+                                </Badge>
+                            ))}
+                            {user.branches.length > 2 && (
+                                <Badge tone="neutral">
+                                    +{user.branches.length - 2}
+                                </Badge>
+                            )}
                         </span>
                     ),
             },
@@ -318,6 +348,7 @@ export default function UsersScreen() {
                 <UserModal
                     user={editing}
                     roles={roles}
+                    branches={branchOptions}
                     isSelf={editing !== null && editing.id === me?.id}
                     onClose={() => setEditing(undefined)}
                     onSaved={(message) => {

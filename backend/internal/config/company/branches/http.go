@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"minimarket/backend/internal/auth"
 )
 
 // Handler traduce HTTP a llamadas al servicio. Es el único archivo del paquete
@@ -17,7 +19,8 @@ func NewHandler(service *Service) *Handler {
 }
 
 // Routes registra las rutas en un grupo que ya exige sesión. La lista no pide
-// permiso: cualquiera que inicie sesión necesita elegir su sucursal.
+// permiso: cualquiera que inicie sesión necesita elegir su sucursal, y recibe
+// solo las suyas.
 func (h *Handler) Routes(api *gin.RouterGroup) {
 	api.GET("/company/branches", h.List)
 }
@@ -33,7 +36,7 @@ type branchResource struct {
 
 // GET /api/company/branches
 func (h *Handler) List(c *gin.Context) {
-	branches, err := h.service.List(c.Request.Context())
+	branches, err := h.service.List(c.Request.Context(), auth.CurrentUser(c).ID)
 	if err != nil {
 		_ = c.Error(err)
 

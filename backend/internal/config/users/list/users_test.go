@@ -38,7 +38,10 @@ func create(router *gin.Engine, token string, body map[string]any) (int, map[str
 }
 
 func newUserBody(email string, roles ...int64) map[string]any {
-	return map[string]any{"name": "Usuario " + email, "email": email, "password": auth.DemoPassword, "role_ids": roles}
+	return map[string]any{
+		"name": "Usuario " + email, "email": email, "password": auth.DemoPassword,
+		"role_ids": roles, "all_branches": true,
+	}
 }
 
 func dataID(body map[string]any) int64 {
@@ -165,7 +168,7 @@ func TestUpdateChangesDataRolesAndDeactivationClosesSessions(t *testing.T) {
 
 	rec := testutil.Call(router, "PUT", fmt.Sprintf("/api/users/%d", id), token, map[string]any{
 		"name": "Nuevo Nombre", "email": "cambio@minimarket.test", "status": "inactive",
-		"role_ids": []int64{roleID(t, pool, "Almacenero")},
+		"role_ids": []int64{roleID(t, pool, "Almacenero")}, "all_branches": true,
 	})
 	if rec.Code != http.StatusOK {
 		t.Fatalf("esperaba 200, llegó %d: %s", rec.Code, rec.Body.String())
@@ -228,7 +231,10 @@ func TestNobodyCanLockTheSystemOut(t *testing.T) {
 		t.Fatalf("no puedes eliminarte: %d", code)
 	}
 
-	same := map[string]any{"name": "Administrador", "email": auth.DemoEmail, "status": "inactive", "role_ids": []int64{admin}}
+	same := map[string]any{
+		"name": "Administrador", "email": auth.DemoEmail, "status": "inactive",
+		"role_ids": []int64{admin}, "all_branches": true,
+	}
 	if code := testutil.Call(router, "PUT", url, token, same).Code; code != http.StatusConflict {
 		t.Fatalf("no puedes desactivarte: %d", code)
 	}
@@ -449,6 +455,7 @@ func TestSummaryCountsEachIndicator(t *testing.T) {
 	_, off := create(router, token, newUserBody("apagado@minimarket.test", cashier))
 	testutil.Call(router, "PUT", fmt.Sprintf("/api/users/%d", dataID(off)), token, map[string]any{
 		"name": "Apagado", "email": "apagado@minimarket.test", "status": "inactive", "role_ids": []int64{cashier},
+		"all_branches": true,
 	})
 
 	_, gone := create(router, token, newUserBody("borrado@minimarket.test"))
@@ -467,5 +474,149 @@ func TestSummaryCountsEachIndicator(t *testing.T) {
 		if summary[key] != value {
 			t.Errorf("%s: esperaba %v, llegó %v", key, value, summary[key])
 		}
+	}
+}
+
+func addBranch(t *testing.T, pool *pgxpool.Pool, code, name string) int64 {
+	t.Helper()
+
+	var id int64
+
+	err := pool.QueryRow(context.Background(),
+		`INSERT INTO branches (code, name) VALUES ($1, $2) RETURNING id`, code, name).Scan(&id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return id
+}
+
+func branchNames(t *testing.T, router *gin.Engine, token string) []string {
+	t.Helper()
+
+	rec := testutil.Call(router, "GET", "/api/company/branches", token, nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("lista de sucursales: %d", rec.Code)
+	}
+
+	var names []string
+
+	for _, item := range testutil.Decode(t, rec)["data"].([]any) {
+		names = append(names, item.(map[string]any)["name"].(string))
+	}
+
+	return names
+}
+
+func TestUserOnlySeesTheBranchesAssignedToThem(t *testing.T) {
+	router, pool := testutil.Router(t, "local")
+	admin := testutil.Login(t, router, pool)
+
+	centro := addBranch(t, pool, "C01", "Sucursal Centro")
+	norte := addBranch(t, pool, "C02", "Sucursal Norte")
+	addBranch(t, pool, "C03", "Sucursal Sur")
+
+	body := newUserBody("vendedor@minimarket.test")
+	body["all_branches"] = false
+	body["branch_ids"] = []int64{norte}
+
+	code, created := create(router, admin, body)
+	if code != http.StatusCreated {
+		t.Fatalf("esperaba 201, llegó %d: %v", code, created)
+	}
+
+	user := created["data"].(map[string]any)
+	if user["all_branches"] != false || len(user["branches"].([]any)) != 1 {
+		t.Fatalf("debía tener solo Norte: %v", user)
+	}
+
+	seller := testutil.LoginAs(t, router, "vendedor@minimarket.test")
+
+	if got := branchNames(t, router, seller); len(got) != 1 || got[0] != "Sucursal Norte" {
+		t.Fatalf("el vendedor solo ve Norte, ve %v", got)
+	}
+
+	// El administrador ve todas, también las que se creen después.
+	if got := branchNames(t, router, admin); len(got) != 3 {
+		t.Fatalf("el administrador ve las 3, ve %v", got)
+	}
+
+	// Se le suma Centro.
+	url := fmt.Sprintf("/api/users/%d", dataID(created))
+
+	rec := testutil.Call(router, "PUT", url, admin, map[string]any{
+		"name": "Vendedor", "email": "vendedor@minimarket.test", "status": "active",
+		"all_branches": false, "branch_ids": []int64{norte, centro},
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("esperaba 200, llegó %d: %s", rec.Code, rec.Body.String())
+	}
+
+	if got := branchNames(t, router, seller); len(got) != 2 {
+		t.Fatalf("ahora ve Centro y Norte, ve %v", got)
+	}
+
+	// "Todas": ve incluso una sucursal que se crea después.
+	testutil.Call(router, "PUT", url, admin, map[string]any{
+		"name": "Vendedor", "email": "vendedor@minimarket.test", "status": "active", "all_branches": true,
+	})
+	addBranch(t, pool, "C04", "Sucursal Este")
+
+	if got := branchNames(t, router, seller); len(got) != 4 {
+		t.Fatalf("con 'todas' ve las 4, ve %v", got)
+	}
+}
+
+func TestBranchRuleIsEnforced(t *testing.T) {
+	router, pool := testutil.Router(t, "local")
+	admin := testutil.Login(t, router, pool)
+
+	norte := addBranch(t, pool, "C02", "Sucursal Norte")
+
+	none := newUserBody("sin-sucursal@minimarket.test")
+	none["all_branches"] = false
+
+	if code, _ := create(router, admin, none); code != http.StatusUnprocessableEntity {
+		t.Fatalf("sin sucursal ni 'todas' esperaba 422, llegó %d", code)
+	}
+
+	ghost := newUserBody("fantasma@minimarket.test")
+	ghost["all_branches"] = false
+	ghost["branch_ids"] = []int64{99999}
+
+	if code, _ := create(router, admin, ghost); code != http.StatusUnprocessableEntity {
+		t.Fatalf("sucursal inexistente esperaba 422, llegó %d", code)
+	}
+
+	// Un administrador siempre trabaja en toda la cadena, aunque se envíe otra cosa.
+	boss := newUserBody("jefe@minimarket.test", roleID(t, pool, "Administrador"))
+	boss["all_branches"] = false
+	boss["branch_ids"] = []int64{norte}
+
+	code, created := create(router, admin, boss)
+	if code != http.StatusCreated {
+		t.Fatalf("esperaba 201, llegó %d: %v", code, created)
+	}
+
+	user := created["data"].(map[string]any)
+	if user["all_branches"] != true || len(user["branches"].([]any)) != 0 {
+		t.Fatalf("un administrador ve todas: %v", user)
+	}
+}
+
+func TestBranchesLookupForTheForm(t *testing.T) {
+	router, pool := testutil.Router(t, "local")
+	admin := testutil.Login(t, router, pool)
+
+	addBranch(t, pool, "C01", "Sucursal Centro")
+
+	rec := testutil.Call(router, "GET", "/api/users/branches", admin, nil)
+	if rec.Code != http.StatusOK || len(testutil.Decode(t, rec)["data"].([]any)) != 1 {
+		t.Fatalf("la lista del formulario debía traer la sucursal: %d %s", rec.Code, rec.Body.String())
+	}
+
+	roles := testutil.Decode(t, testutil.Call(router, "GET", "/api/users/roles", admin, nil))["data"].([]any)
+	if roles[0].(map[string]any)["is_admin"] != true {
+		t.Fatalf("el rol Administrador debe venir marcado: %v", roles)
 	}
 }

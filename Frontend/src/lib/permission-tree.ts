@@ -37,28 +37,116 @@ const covers = (rule: string, code: string) =>
 const viewOf = (submodule: CatalogNode) => `${submodule.code}.view`;
 
 /**
- * De los permisos guardados en un rol ("erp", "pos.sales", "erp.catalog.products.edit")
- * a las acciones concretas que quedan marcadas. Cualquier acción deja marcado
- * también "Ver" de su submódulo.
+ * Las acciones concretas que cubren estas reglas ("erp", "pos.sales",
+ * "erp.catalog.products.edit"), sin agregar nada más.
  */
-export function expand(rules: string[], tree: CatalogNode[]): Set<string> {
-    const selected = new Set<string>();
+export function covered(rules: string[], tree: CatalogNode[]): Set<string> {
+    const picked = new Set<string>();
 
     for (const system of tree) {
         for (const action of actionsOf(system)) {
             if (rules.some((rule) => covers(rule, action))) {
-                selected.add(action);
-            }
-        }
-
-        for (const submodule of submodulesOf(system)) {
-            if (actionsOf(submodule).some((code) => selected.has(code))) {
-                selected.add(viewOf(submodule));
+                picked.add(action);
             }
         }
     }
 
-    return selected;
+    return picked;
+}
+
+/** Cualquier acción deja marcado también "Ver" de su submódulo. */
+function withViews(picked: Set<string>, tree: CatalogNode[]): Set<string> {
+    const out = new Set(picked);
+
+    for (const system of tree) {
+        for (const submodule of submodulesOf(system)) {
+            if (actionsOf(submodule).some((code) => out.has(code))) {
+                out.add(viewOf(submodule));
+            }
+        }
+    }
+
+    return out;
+}
+
+/**
+ * De los permisos guardados en un rol a las acciones concretas que quedan
+ * marcadas (con "Ver" incluido en cada submódulo que tenga algo).
+ */
+export function expand(rules: string[], tree: CatalogNode[]): Set<string> {
+    return withViews(covered(rules, tree), tree);
+}
+
+/**
+ * Lo que de verdad puede una persona: lo que dan sus roles y lo que se le dio,
+ * menos lo que se le quitó. Quitarle "Ver" de un submódulo se lo quita entero.
+ */
+export function effective(
+    rolePermissions: string[],
+    allow: string[],
+    deny: string[],
+    tree: CatalogNode[],
+): Set<string> {
+    const result = withViews(covered([...rolePermissions, ...allow], tree), tree);
+    const denied = covered(deny, tree);
+
+    for (const system of tree) {
+        for (const submodule of submodulesOf(system)) {
+            if (denied.has(viewOf(submodule))) {
+                for (const code of actionsOf(submodule)) {
+                    result.delete(code);
+                }
+            }
+        }
+    }
+
+    for (const code of denied) {
+        result.delete(code);
+    }
+
+    return result;
+}
+
+/** Los códigos de "ver" de cada pantalla (cada submódulo es una pantalla). */
+export function screenCodes(tree: CatalogNode[]): string[] {
+    return tree.flatMap(submodulesOf).map(viewOf);
+}
+
+/** "ERP › Catálogo y maestros › Productos › Editar" para un código de acción. */
+export function describe(code: string, tree: CatalogNode[]): string {
+    const path: string[] = [];
+
+    const visit = (nodes: CatalogNode[]): boolean => {
+        for (const node of nodes) {
+            if (node.code !== code && !code.startsWith(`${node.code}.`)) {
+                continue;
+            }
+
+            path.push(node.label);
+
+            const action = node.actions?.find((candidate) => candidate.code === code);
+
+            if (action) {
+                path.push(action.label);
+
+                return true;
+            }
+
+            return node.code === code || visit(node.children ?? []);
+        }
+
+        return false;
+    };
+
+    return visit(tree) ? path.join(' › ') : code;
+}
+
+export function sameSet(a: Set<string>, b: Set<string>): boolean {
+    return a.size === b.size && [...a].every((value) => b.has(value));
+}
+
+export function difference(a: Set<string>, b: Set<string>): Set<string> {
+    return new Set([...a].filter((value) => !b.has(value)));
 }
 
 function pack(node: CatalogNode, selected: Set<string>): { full: boolean; codes: string[] } {

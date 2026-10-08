@@ -4,7 +4,15 @@ import { apiDelete, apiGet, apiPost, apiPut, getPage } from '@/lib/api';
 
 export type UserStatus = 'active' | 'inactive';
 
-export type UserRole = { id: number; name: string };
+export type UserRole = {
+    id: number;
+    name: string;
+    /** El rol Administrador: da acceso a todas las sucursales. */
+    is_admin: boolean;
+};
+
+/** Una sucursal que se puede asignar a un usuario. */
+export type BranchOption = { id: number; name: string; kind: string };
 
 export type DocumentType = 'dni' | 'ce' | 'passport';
 
@@ -21,6 +29,9 @@ export type SystemUser = {
     position: string;
     status: UserStatus;
     status_label: string;
+    /** Trabaja en toda la cadena (y en las que se creen después). */
+    all_branches: boolean;
+    branches: { id: number; name: string }[];
     roles: UserRole[];
     last_login_at: string | null;
     created_at: string;
@@ -35,6 +46,8 @@ export type UserPayload = {
     position: string;
     status: UserStatus;
     role_ids: number[];
+    all_branches: boolean;
+    branch_ids: number[];
 };
 
 export type NewUserPayload = UserPayload & { password: string };
@@ -88,6 +101,9 @@ export function fetchUsersPage(
 export const fetchUserSummary = () => apiGet<UserSummary>('/users/summary');
 
 export const fetchRoles = () => apiGet<UserRole[]>('/users/roles');
+
+export const fetchBranchOptions = () =>
+    apiGet<BranchOption[]>('/users/branches');
 
 export const createUser = (payload: NewUserPayload) =>
     apiPost<SystemUser>('/users', payload);

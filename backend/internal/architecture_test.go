@@ -25,6 +25,10 @@ var allowedCrossImports = map[string][]string{
 	// Crear usuarios guarda contraseñas con el mismo hash que usa el login, y
 	// necesita saber quién hace la petición para no dejarlo borrarse a sí mismo.
 	"config/users/list": {"auth"},
+	// La lista de sucursales es la de quien la pide.
+	"config/company/branches": {"auth"},
+	// Saber quién cambia los accesos (nadie cambia los suyos) y quién pide uno.
+	"config/roles/permissions": {"auth"},
 }
 
 type goFile struct {
@@ -90,6 +94,12 @@ func followsHTTPRules(dir string) bool {
 	return isFeature(dir) || dir == "permission"
 }
 
+// La capa HTTP de un paquete puede repartirse en varios archivos por caso de
+// uso (http.go, http_lookups.go…) para no pasar del límite de líneas.
+func isHTTPFile(name string) bool {
+	return name == "http.go" || strings.HasPrefix(name, "http_")
+}
+
 func importsAny(file goFile, prefixes ...string) string {
 	for _, imp := range file.imports {
 		for _, prefix := range prefixes {
@@ -106,7 +116,7 @@ func importsAny(file goFile, prefixes ...string) string {
 // no sabe que existe HTTP.
 func TestOnlyHTTPFilesKnowGin(t *testing.T) {
 	for _, file := range load(t) {
-		if !followsHTTPRules(file.dir) || file.name == "http.go" || file.name == "middleware.go" {
+		if !followsHTTPRules(file.dir) || isHTTPFile(file.name) || file.name == "middleware.go" {
 			continue
 		}
 
@@ -119,12 +129,12 @@ func TestOnlyHTTPFilesKnowGin(t *testing.T) {
 // El handler no habla con la base de datos: eso es del store y del servicio.
 func TestHandlersDoNotTouchTheDatabase(t *testing.T) {
 	for _, file := range load(t) {
-		if !followsHTTPRules(file.dir) || file.name != "http.go" {
+		if !followsHTTPRules(file.dir) || !isHTTPFile(file.name) {
 			continue
 		}
 
 		if imp := importsAny(file, "github.com/jackc/pgx/v5", modulePath+"platform/database"); imp != "" {
-			t.Errorf("%s/http.go importa %s: el handler no accede a la base de datos", file.dir, imp)
+			t.Errorf("%s/%s importa %s: el handler no accede a la base de datos", file.dir, file.name, imp)
 		}
 	}
 }

@@ -302,8 +302,9 @@ Además: `go vet ./...` y `gofmt` limpios.
 | Configuraciones › Sucursales: lista de sucursales activas (para el selector de la cuenta) | Hecho (faltan alta, edición, empresa y almacenes) |
 | Configuraciones › Usuarios › Lista de usuarios: listado de 20 con cursor, alta, edición con roles, desactivar, eliminar y reiniciar contraseña; código automático (USR-0001), documento, teléfono, cargo y último acceso; reglas de "siempre un administrador activo" y "nadie se borra ni desactiva a sí mismo" | Hecho |
 | Configuraciones › Roles y permisos › Roles: listado de 20 con cursor, crear, editar y eliminar roles con su árbol de permisos; el rol Administrador no se toca; un rol con usuarios no se elimina; los cambios surten efecto al instante | Hecho |
-| Permisos por sistema (permisos directos y denegaciones por usuario) | Pendiente (siguiente) |
-| Sucursales de cada usuario y validación de la sucursal activa | Pendiente |
+| Configuraciones › Roles y permisos › Permisos por sistema: accesos por rol y por persona (permisos directos y denegaciones sobre lo que dan sus roles) y solicitudes de acceso (pedir, aprobar, rechazar); nadie cambia sus propios permisos y a un administrador no se le toca | Hecho |
+| Sucursales de cada usuario (una, varias o todas; los administradores, todas) | Hecho |
+| Validar en el servidor la sucursal activa (`X-Branch-Id`) | Pendiente: se hace con el primer módulo que dependa de la sucursal (Inventario); la regla de a qué sucursales entra cada usuario ya existe |
 | Empresa y sucursales: CRUD, datos de la empresa y almacenes | Pendiente |
 | ERP › Inventario con kardex | Pendiente |
 | Eventos entre sistemas y trabajos en segundo plano (SUNAT, CRM, BI) | Pendiente |
