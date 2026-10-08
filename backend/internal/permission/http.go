@@ -21,7 +21,8 @@ func NewHandler(service *Service) *Handler {
 // Routes registra las rutas en un grupo que ya exige sesión.
 func (h *Handler) Routes(api *gin.RouterGroup, can web.Guard) {
 	api.GET("/permissions/me", h.Me)
-	api.GET("/permissions/catalog", can("config.roles.permissions.view"), h.Catalog)
+	// El árbol lo necesita quien administra permisos y quien arma roles.
+	api.GET("/permissions/catalog", can("config.roles.permissions.view", "config.roles.roles.view"), h.Catalog)
 }
 
 // GET /api/permissions/me — lo que puede hacer quien hace la petición.

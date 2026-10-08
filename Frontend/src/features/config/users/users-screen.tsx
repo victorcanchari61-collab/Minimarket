@@ -15,7 +15,7 @@ import type { DataTableColumn, TableQuery } from '@/components/data/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RowAction } from '@/components/ui/row-action';
-import { StatCard } from '@/components/ui/stat-card';
+import { ShareCard } from '@/components/ui/share-card';
 import { useAuthUser } from '@/hooks/use-auth-user';
 import { useConfirm } from '@/hooks/use-confirm';
 import { useCursorList } from '@/hooks/use-cursor-list';
@@ -40,10 +40,6 @@ const STATUS_OPTIONS = [
     { value: 'active', label: 'Activo' },
     { value: 'inactive', label: 'Inactivo' },
 ];
-
-/** Mientras llega el resumen se muestra un guion, no un cero que pueda confundir. */
-const count = (value: number | undefined) =>
-    value === undefined ? '—' : String(value);
 
 const messageOf = (error: unknown) =>
     error instanceof Error ? error.message : 'No se pudo completar la acción.';
@@ -71,6 +67,9 @@ export default function UsersScreen() {
         undefined,
     );
     const [resetting, setResetting] = useState<SystemUser | null>(null);
+
+    // Todos los usuarios son activos o inactivos: el total sale de ahí.
+    const total = summary ? summary.active + summary.inactive : undefined;
 
     const loadSummary = useCallback(() => {
         fetchUserSummary()
@@ -233,33 +232,33 @@ export default function UsersScreen() {
             }
             stats={
                 <>
-                    <StatCard
-                        label="Usuarios activos"
-                        value={count(summary?.active)}
+                    <ShareCard
+                        label="Activos"
                         icon={<UserCheck className="size-5" aria-hidden />}
+                        value={summary?.active}
+                        total={total}
                         tone="success"
-                        hint="Pueden entrar al sistema"
                     />
-                    <StatCard
+                    <ShareCard
                         label="Inactivos"
-                        value={count(summary?.inactive)}
                         icon={<UserX className="size-5" aria-hidden />}
+                        value={summary?.inactive}
+                        total={total}
                         tone="neutral"
-                        hint="Desactivados"
                     />
-                    <StatCard
+                    <ShareCard
                         label="Administradores"
-                        value={count(summary?.administrators)}
                         icon={<ShieldCheck className="size-5" aria-hidden />}
+                        value={summary?.administrators}
+                        total={total}
                         tone="info"
-                        hint="Activos con acceso total"
                     />
-                    <StatCard
+                    <ShareCard
                         label="Sin roles"
-                        value={count(summary?.without_roles)}
                         icon={<ShieldOff className="size-5" aria-hidden />}
+                        value={summary?.without_roles}
+                        total={total}
                         tone="warning"
-                        hint="No pueden hacer nada aún"
                     />
                 </>
             }

@@ -31,6 +31,8 @@ Requiere Go 1.27 y PostgreSQL (base `minimarket`). En Windows, `iniciar-api.bat`
 | GET · PUT · DELETE | `/api/users/:id` | ver, editar (datos, estado y roles) y eliminar |
 | PUT | `/api/users/:id/password` | reiniciar contraseña (cierra las sesiones del usuario) |
 | GET | `/api/users/summary` · `/api/users/roles` | activos e inactivos · roles para el formulario |
+| GET · POST | `/api/roles` | roles: 20 por petición con cursor (`search`, `sort`, `direction`) · alta con sus permisos |
+| GET · PUT · DELETE | `/api/roles/:id` | ver, editar (nombre, descripción y permisos) y eliminar |
 | GET | `/api/company/branches` | sucursales activas (cualquier usuario con sesión; alimenta el selector de sucursal) |
 | GET | `/api/permissions/me` | acciones que puede hacer el usuario (arma el menú) |
 | GET | `/api/permissions/catalog` | árbol completo de permisos (sistema → módulo → submódulo → acciones) |
@@ -48,6 +50,7 @@ internal/
   auth/                          login por token
   permission/                    catálogo de permisos, regla de acceso y guardia por ruta
   erp/catalog/products/          un submódulo = un paquete: http.go service.go store.go list_query.go types.go errors.go wire.go
+  config/roles/roles/            Configuraciones › Roles y permisos › Roles
   config/users/list/             Configuraciones › Usuarios › Lista de usuarios
   config/company/branches/        Configuraciones › Empresa y sucursales › Sucursales
   erp/catalog/units/             otro submódulo (Unidades y presentaciones)
