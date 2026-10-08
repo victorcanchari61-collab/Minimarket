@@ -4,7 +4,7 @@ Catálogo funcional de la suite: qué sistemas hay, qué módulos y submódulos 
 
 ## Cómo leer este documento
 
-- Los nombres de **sistemas, módulos y submódulos** de las secciones 4 (POS a BI) y 5 (Configuraciones) son los del menú de la aplicación (`Frontend/src/lib/navigation.ts`) y los del catálogo de permisos (`backend/internal/permission/catalog_*.go`). Lo que se agregue aquí y se construya debe agregarse también en esos dos lugares.
+- Los nombres de **sistemas, módulos y submódulos** de las secciones 4 (POS a BI), 5 (Configuraciones) y 6 (MDM y TMS) son los del menú de la aplicación (`Frontend/src/lib/navigation.ts`) y los del catálogo de permisos (`backend/internal/permission/catalog_*.go`). Lo que se agregue aquí y se construya debe agregarse también en esos dos lugares.
 - Cada módulo lleva su estado:
   - **[Hecho]** construido y probado.
   - **[Parcial]** una parte está construida (se indica cuál).
@@ -22,14 +22,16 @@ Una suite integrada para una cadena de minimarkets: del mostrador a la contabili
 |---|---|---|
 | **POS** | Vender en tienda, cobrar, manejar la caja y emitir comprobantes | Pendiente |
 | **ERP** | Núcleo administrativo: catálogo, inventario, compras, ventas B2B, finanzas, activos | Parcial (Productos) |
+| **MDM** | Datos maestros: la única versión de cada producto, tienda, proveedor y cliente | Pendiente (menú y permisos creados) |
 | **SCM** | Prever la demanda y reponer: de la tienda al centro de distribución y de este al proveedor | Pendiente |
 | **WMS** | Operar el centro de distribución: recepción, ubicación, picking y despacho | Pendiente |
+| **TMS** | Transporte: rutas, flota, despachos y entrega de la mercadería a las tiendas | Pendiente (menú y permisos creados) |
 | **HCM / RR. HH.** | Personal, asistencia, turnos, planilla y seguridad laboral | Pendiente |
 | **CRM** | Clientes, fidelización, campañas y atención | Pendiente |
 | **BI** | Indicadores y reportes para la gerencia | Pendiente |
 | **Configuraciones** | Usuarios, roles y permisos, empresa y sucursales, terminales, auditoría, integraciones | Parcial |
 
-Además, dos sistemas **propuestos** (sección 6): **MDM** (datos maestros) y **TMS** (transporte), y uno **para el final**: **E-commerce** (sección 7).
+**MDM** y **TMS** ya están creados como sistemas (con su menú y sus permisos, sin pantallas todavía; sección 6). **E-commerce** va para el final (sección 7).
 
 ```text
                   ┌──────────────────────────────────┐
@@ -40,7 +42,7 @@ Además, dos sistemas **propuestos** (sección 6): **MDM** (datos maestros) y **
 ┌──────────────────────────────────────────────────────────────────────┐
 │                         MDM · Datos maestros                         │
 │        productos · precios · tiendas · proveedores · clientes        │
-│         (propuesto: hoy lo cumple ERP › Catálogo y maestros)         │
+│      (mientras se construye, lo cumple ERP › Catálogo y maestros)    │
 └──────────────────────────────────────────────────────────────────────┘
       │              │              │              │              │
       ▼              ▼              ▼              ▼              ▼
@@ -55,7 +57,7 @@ Además, dos sistemas **propuestos** (sección 6): **MDM** (datos maestros) y **
 │(al final)│   │    CD    │──►│transporte│ ─► tiendas (reposición)
 └──────────┘   └──────────┘   └──────────┘
 
-Propuestos: MDM y TMS · Para el final: E-commerce
+Creados sin pantallas: MDM y TMS · Para el final: E-commerce
 HCM: la planilla genera asientos en el ERP · CRM: recibe del POS las compras y los puntos
 
 Transversal a todos: Configuraciones (usuarios, roles y permisos, empresa,
@@ -82,18 +84,18 @@ Lo que decide si la suite crece ordenada o se llena de duplicados. Pesa más que
 
 | Dato | Sistema dueño | Lo consultan | Nota |
 |---|---|---|---|
-| Producto, código de barras, categoría, unidad, impuestos | **ERP › Catálogo y maestros** (hoy hace de MDM) | POS, SCM, WMS, CRM, BI | Ver sección 6 sobre separarlo como MDM |
+| Producto, código de barras, categoría, unidad, impuestos | **MDM** (mientras se construye, ERP › Catálogo y maestros) | POS, SCM, WMS, CRM, BI | Ver sección 6.1 |
 | Precio y lista de precios | **ERP › Catálogo y maestros** | POS | El POS aplica promociones y precios por sucursal, pero no los define |
 | Venta, comprobante de venta, caja, turno de caja | **POS** | ERP (contabiliza), CRM, BI | |
 | Cliente (identidad, contacto, segmento, consentimientos) | **CRM** | POS, ERP (B2B), BI | El ERP guarda al cliente B2B como cuenta comercial enlazada al mismo cliente |
-| Proveedor (RUC, condiciones, contratos) | **ERP › Catálogo y maestros** | SCM, WMS | SCM guarda **desempeño** (lead time, cumplimiento), no el maestro |
+| Proveedor (RUC, condiciones, contratos) | **MDM** (mientras se construye, ERP › Catálogo y maestros) | SCM, WMS | SCM guarda **desempeño** (lead time, cumplimiento), no el maestro |
 | Compra (requerimiento, orden, factura del proveedor) | **ERP › Compras** | SCM (sugiere), WMS (recibe) | SCM propone; el ERP formaliza |
 | Existencias por sucursal y almacén, kardex, costo | **ERP › Inventario** | POS, SCM, WMS, BI | El libro único |
 | Ubicación física, lote y vencimiento dentro de un almacén | **WMS** | ERP | Reporta sus movimientos al libro de existencias |
 | Demanda, pronóstico, stock mínimo/máximo, pedido sugerido | **SCM** | ERP, BI | |
 | Picking, packing, despacho desde el CD | **WMS** | ERP, SCM | |
 | Transferencia entre sucursales | **ERP** crea el documento, **WMS** ejecuta el movimiento físico | SCM, BI | |
-| Transporte: ruta, vehículo, conductor, entrega | **TMS** (mientras no exista, SCM › Distribución y transporte) | WMS, SCM, BI | El TMS devuelve a SCM el lead time real |
+| Transporte: ruta, vehículo, conductor, entrega | **TMS** (hasta que tenga pantallas, SCM › Distribución y transporte) | WMS, SCM, BI | El TMS devuelve a SCM el lead time real |
 | Contabilidad, cuentas por cobrar y por pagar, tesorería | **ERP › Finanzas** | BI | |
 | Activo fijo | **ERP › Activos fijos** | BI | |
 | Colaborador, contrato, asistencia, planilla | **HCM** | ERP (asiento de planilla), BI | |
@@ -435,23 +437,77 @@ El sistema transversal: define **quién entra, a qué, y con qué empresa, sucur
 
 ---
 
-## 6. Sistemas propuestos
+## 6. MDM y TMS
 
-Están aquí para decidirse; **no** están en el menú ni en el código.
+Dos sistemas que se agregaron al menú y al catálogo de permisos (cada uno con su color y sus acciones por submódulo). **Todavía no tienen pantallas**: se construyen en el orden de la sección 11.
 
 ### 6.1 MDM — Datos maestros
 
-Controla los datos de los que dependen todos los demás: productos (SKU, código de barras, marca, categoría, unidad, peso, volumen, impuestos, costo, precio, margen), tiendas (empresa, región, formato, área, horarios, cajas), proveedores y clientes.
+Controla los datos de los que dependen todos los demás: una sola versión de cada producto, tienda, proveedor y cliente.
 
-**Recomendación:** mantenerlo, por ahora, como el módulo **ERP › Catálogo y maestros**, que ya cumple ese papel. La regla que importa (una sola versión de cada dato maestro) se cumple igual. Separarlo como sistema independiente tiene sentido cuando haya varias empresas con catálogos distintos, flujos de aprobación de altas de producto o integraciones masivas con proveedores.
+#### 6.1.1 Productos — [Pendiente]
+- **Productos**: SKU, marca, categoría, unidad, peso, volumen, impuestos, proveedor, costo, precio y margen
+- **Marcas**
+- **Categorías y subcategorías**
+- **Códigos de barras**
+- **Impuestos**
+- **Unidades y equivalencias**
+
+#### 6.1.2 Zonas y formatos — [Pendiente]
+- **Regiones y zonas**: región, ciudad y distrito
+- **Formatos de tienda**: metraje y tipo
+- **Horarios de atención**
+
+Las sucursales, los almacenes y las cajas se siguen administrando en Configuraciones › Empresa y sucursales: MDM define cómo se **clasifican**, no las crea.
+
+#### 6.1.3 Proveedores — [Pendiente]
+- **Maestro de proveedores**: RUC, razón social
+- **Contactos y contratos**
+- **Condiciones y plazos**
+
+#### 6.1.4 Clientes — [Pendiente]
+- **Datos del cliente**: identidad, contacto, segmento (el dueño sigue siendo el CRM; MDM guarda la versión única)
+- **Consentimientos**
+
+#### 6.1.5 Calidad de datos — [Pendiente]
+- **Duplicados y fusiones**
+- **Aprobación de altas**: un producto o proveedor nuevo se aprueba antes de usarse
+- **Historial de cambios**
+
+**Qué pasa con ERP › Catálogo y maestros.** Hoy tiene la pantalla de Productos (hecha) y la lista de Unidades. Cuando MDM se construya, **esas pantallas pasan a MDM** y el ERP las consulta; hasta entonces el ERP hace de MDM (por eso el menú del ERP todavía las muestra). Las listas de precios se quedan en el ERP.
 
 ### 6.2 TMS — Transporte y distribución (necesario para la reposición)
 
-Lleva la mercadería del centro de distribución a las tiendas. Cubre: flota y vehículos, conductores y transportistas externos, planificación de rutas, despachos, seguimiento (GPS si se instala), combustible y mantenimiento, costos por ruta y por entrega, prueba de entrega (firma o foto) e incidencias.
+Lleva la mercadería del centro de distribución a las tiendas.
+
+#### 6.2.1 Flota — [Pendiente]
+- **Vehículos**: capacidad y documentos
+- **Conductores**: licencias
+- **Transportistas**: propios y contratados
+- **Mantenimiento**: programación y registro
+
+#### 6.2.2 Rutas y planificación — [Pendiente]
+- **Rutas**: tiendas por ruta y orden de visita
+- **Optimización de rutas**
+- **Calendario de entregas**: ventanas por tienda
+
+#### 6.2.3 Despachos — [Pendiente]
+- **Asignación de pedidos** a vehículos
+- **Salidas y retornos**: confirmación de carga y de regreso
+
+#### 6.2.4 Seguimiento — [Pendiente]
+- **Seguimiento en vivo** (GPS si se instala)
+- **Entregas y prueba de entrega**: firma o foto de quien recibe
+- **Incidencias**: faltantes, rechazos, demoras
+
+#### 6.2.5 Costos de transporte — [Pendiente]
+- **Combustible**
+- **Costos por ruta y entrega**
+- **Fletes de transportistas**
 
 Dentro de la reposición hace la tercera parte: **SCM** decide qué, cuánto y cuándo; **WMS** lo prepara; **TMS** lo traslada y confirma la entrega. Además le devuelve a SCM el **lead time real** de cada tienda, que mejora el cálculo de cuándo pedir.
 
-**Propuesta:** sistema propio, que se construye **después del WMS** (de ahí salen los pedidos empacados). Hasta entonces, el WMS cubre las guías de remisión y la carga del vehículo. SCM conserva solo la planificación (4.3.4 pasa a apuntar al TMS cuando exista).
+Se construye **después del WMS** (de ahí salen los pedidos empacados). Hasta entonces, el WMS cubre las guías de remisión y la carga del vehículo, y SCM › Distribución y transporte conserva la planificación (4.3.4 pasa a apuntar al TMS cuando exista).
 
 ---
 
@@ -475,8 +531,8 @@ Como se apoya en las fuentes de verdad de la sección 3, no obliga a rehacer nad
 
 ## 8. Puntos por decidir
 
-1. **MDM como sistema aparte o módulo del ERP.** Recomendación: módulo del ERP (6.1).
-2. **TMS.** Propuesta: sistema propio, después del WMS (6.2). Falta confirmar si el transporte es propio, contratado o mixto, porque define cuánto de GPS y de costos hace falta.
+1. **Cuándo se mueven Productos y Unidades de ERP › Catálogo a MDM.** MDM ya existe en el menú; la mudanza se hace cuando se construya (6.1).
+2. **Alcance del TMS.** Ya existe en el menú; falta confirmar si el transporte es propio, contratado o mixto, porque define cuánto de GPS y de costos hace falta (6.2).
 3. **Dueño del inventario de tienda.** El esquema original lo dejaba abierto ("POS/ERP/WMS según arquitectura"). Recomendación: ERP, con el WMS como dueño de la ubicación física (principio 2). Esto se fija al construir ERP › Inventario.
 4. **Módulos repetidos entre el menú y Configuraciones.** ERP › Administración del sistema (Multiempresa y multisucursal, Roles y auditoría, Integraciones), ERP › Catálogo › Sucursales y almacenes, y POS › Seguridad y configuración (Usuarios y roles, Terminales y series) hacen lo mismo que Configuraciones. Recomendación: que Configuraciones sea el único lugar donde se administran y que esos módulos pasen a mostrar acceso directo o se quiten del menú.
 5. **Dónde vive la facturación electrónica.** Hoy está en el menú del POS. El ERP la usa para ventas B2B y guías. Recomendación: un servicio único (principio 3) con su pantalla de seguimiento en el POS y consulta desde el ERP.
@@ -541,7 +597,7 @@ Proveedor ──► WMS (recepción) ──► ERP (inventario, compra, cuenta p
 | Acceso y seguridad | Inicio de sesión, permisos jerárquicos, roles, permisos directos y denegaciones, solicitudes de acceso, sucursales por usuario | Auditoría; validar la sucursal activa en el servidor |
 | Configuraciones | Usuarios, Roles y permisos, Empresa y sucursales (datos, sucursales, almacenes) | Terminales y series, Auditoría, Integraciones |
 | ERP | Catálogo › Productos; lista de unidades | Resto del catálogo, Inventario, Compras, Ventas y distribución, Finanzas, Activos fijos, Presupuesto |
-| POS, SCM, WMS, HCM, CRM, BI | Diseño del menú y de los permisos de cada submódulo | Todo lo demás |
+| POS, MDM, SCM, WMS, TMS, HCM, CRM, BI | Diseño del menú y de los permisos de cada submódulo | Todo lo demás |
 
 El orden previsto: **ERP › Inventario con kardex** (le da uso real a sucursales y almacenes), luego Compras, el POS, y al final las integraciones.
 

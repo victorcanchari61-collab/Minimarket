@@ -1,0 +1,67 @@
+package permission
+
+// mdm es el sistema de datos maestros: la única versión de cada producto,
+// tienda, proveedor y cliente que consultan todos los demás sistemas.
+func mdm() System {
+	return sys("mdm", "MDM",
+		mod("products", "Productos",
+			sub("products", "Productos", Create, Edit, Delete, Export),
+			sub("brands", "Marcas", CRUD...),
+			sub("categories", "Categorías y subcategorías", CRUD...),
+			sub("barcodes", "Códigos de barras", CRUD...),
+			sub("taxes", "Impuestos", CRUD...),
+			sub("units", "Unidades y equivalencias", CRUD...),
+		),
+		mod("locations", "Zonas y formatos",
+			sub("regions", "Regiones y zonas", CRUD...),
+			sub("formats", "Formatos de tienda", CRUD...),
+			sub("hours", "Horarios de atención", Edit),
+		),
+		mod("suppliers", "Proveedores",
+			sub("suppliers", "Maestro de proveedores", Create, Edit, Delete, Export),
+			sub("contracts", "Contactos y contratos", CRUD...),
+			sub("terms", "Condiciones y plazos", Edit),
+		),
+		mod("customers", "Clientes",
+			sub("records", "Datos del cliente", Create, Edit, Delete, Export),
+			sub("consents", "Consentimientos", Edit),
+		),
+		mod("quality", "Calidad de datos",
+			sub("duplicates", "Duplicados y fusiones", Resolve),
+			sub("approvals", "Aprobación de altas", Approve),
+			sub("changes", "Historial de cambios", Export),
+		),
+	)
+}
+
+// tms es el sistema de transporte: lleva la mercadería del centro de
+// distribución a las tiendas y confirma la entrega.
+func tms() System {
+	return sys("tms", "TMS",
+		mod("fleet", "Flota",
+			sub("vehicles", "Vehículos", CRUD...),
+			sub("drivers", "Conductores", CRUD...),
+			sub("carriers", "Transportistas", CRUD...),
+			sub("maintenance", "Mantenimiento", Schedule, Register),
+		),
+		mod("routes", "Rutas y planificación",
+			sub("route_plans", "Rutas", Create, Edit, Delete, Publish),
+			sub("optimization", "Optimización de rutas", Generate, Approve),
+			sub("calendar", "Calendario de entregas", Schedule, Cancel),
+		),
+		mod("dispatch", "Despachos",
+			sub("assignment", "Asignación de pedidos", Assign, Cancel),
+			sub("departures", "Salidas y retornos", Confirm, Register),
+		),
+		mod("tracking", "Seguimiento",
+			sub("live", "Seguimiento en vivo"),
+			sub("deliveries", "Entregas y prueba de entrega", Register, Confirm),
+			sub("incidents", "Incidencias", Register, Resolve),
+		),
+		mod("costs", "Costos de transporte",
+			sub("fuel", "Combustible", Register, Export),
+			sub("trip_costs", "Costos por ruta y entrega", Export),
+			sub("freight", "Fletes de transportistas", Register, Approve),
+		),
+	)
+}

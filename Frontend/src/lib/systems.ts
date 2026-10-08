@@ -5,11 +5,14 @@ import {
     Building2,
     ChartColumn,
     Clock,
+    Copy,
+    Database,
     FileText,
     Heart,
     LayoutDashboard,
     Megaphone,
     Package,
+    PackageCheck,
     PackageOpen,
     Percent,
     Receipt,
@@ -31,7 +34,16 @@ import { moduleLabels } from '@/lib/navigation';
 
 export const BRAND_NAME = 'MiniMarket';
 
-export type SystemKey = 'pos' | 'erp' | 'scm' | 'wms' | 'hcm' | 'crm' | 'bi';
+export type SystemKey =
+    | 'pos'
+    | 'erp'
+    | 'mdm'
+    | 'scm'
+    | 'wms'
+    | 'tms'
+    | 'hcm'
+    | 'crm'
+    | 'bi';
 
 export type StatusTone = 'ok' | 'warn' | 'info' | 'bad';
 
@@ -267,6 +279,74 @@ export const SYSTEMS: Record<SystemKey, SystemDefinition> = {
         footer: 'Clientes registrados · 18,420',
     },
 
+    mdm: {
+        key: 'mdm',
+        name: 'MDM',
+        fullName: 'Datos maestros',
+        icon: Database,
+        headline: 'Una sola versión de cada dato',
+        blurb: 'Productos, tiendas, proveedores y clientes con aprobación de altas y control de duplicados, para que todos los sistemas hablen de lo mismo.',
+        modules: moduleLabels('mdm'),
+        rows: [
+            {
+                icon: Package,
+                title: 'Arroz extra 5 kg',
+                subtitle: 'SKU 100234 · Marca Costeño · Unidad: saco',
+                status: 'Aprobado',
+                tone: 'ok',
+            },
+            {
+                icon: Building2,
+                title: 'Alicorp S.A.A.',
+                subtitle: 'Proveedor · Crédito a 30 días',
+                status: 'Vigente',
+                tone: 'ok',
+            },
+            {
+                icon: Copy,
+                title: 'Gaseosa cola 2.5 L',
+                subtitle: 'Dos fichas con el mismo código de barras',
+                status: 'Por revisar',
+                tone: 'warn',
+            },
+        ],
+        footer: 'Altas de hoy · 12 · 3 por aprobar',
+    },
+
+    tms: {
+        key: 'tms',
+        name: 'TMS',
+        fullName: 'Transporte y distribución',
+        icon: Truck,
+        headline: 'Cada tienda recibe lo que pidió, a tiempo',
+        blurb: 'Rutas, flota, despachos y prueba de entrega para llevar la reposición del centro de distribución hasta cada tienda.',
+        modules: moduleLabels('tms'),
+        rows: [
+            {
+                icon: Route,
+                title: 'Ruta R-04 · Sur',
+                subtitle: 'Centro de distribución → 6 tiendas · 38 km',
+                status: 'En ruta',
+                tone: 'info',
+            },
+            {
+                icon: Truck,
+                title: 'Camión ABC-123',
+                subtitle: 'Luis Ramos · 82% de carga',
+                status: 'Despachado',
+                tone: 'ok',
+            },
+            {
+                icon: PackageCheck,
+                title: 'Entrega Miraflores',
+                subtitle: 'Firmada por Rosa Quispe · 10:42',
+                status: 'Entregada',
+                tone: 'ok',
+            },
+        ],
+        footer: 'Entregas de hoy · 18 de 22 completadas',
+    },
+
     bi: {
         key: 'bi',
         name: 'BI',
@@ -306,8 +386,10 @@ export const SYSTEMS: Record<SystemKey, SystemDefinition> = {
 export const SYSTEM_LIST: SystemDefinition[] = [
     SYSTEMS.pos,
     SYSTEMS.erp,
+    SYSTEMS.mdm,
     SYSTEMS.scm,
     SYSTEMS.wms,
+    SYSTEMS.tms,
     SYSTEMS.hcm,
     SYSTEMS.crm,
     SYSTEMS.bi,

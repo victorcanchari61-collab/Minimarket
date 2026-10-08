@@ -102,7 +102,7 @@ type Catalog struct {
 
 // DefaultCatalog es el catálogo de la suite completa.
 func DefaultCatalog() *Catalog {
-	return NewCatalog(erp(), pos(), scm(), wms(), hcm(), crm(), bi(), configSystem())
+	return NewCatalog(erp(), pos(), mdm(), scm(), wms(), tms(), hcm(), crm(), bi(), configSystem())
 }
 
 // NewCatalog arma el índice. Un código repetido es un error de quien escribió

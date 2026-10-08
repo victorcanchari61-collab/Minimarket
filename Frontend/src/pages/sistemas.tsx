@@ -55,7 +55,7 @@ export default function Sistemas() {
                         {entries.map((system, index) => (
                             <li
                                 key={system.key}
-                                className="sys-rise w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)]"
+                                className="sys-rise w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(25%-0.75rem)]"
                                 style={
                                     {
                                         '--sys-delay': `${index * 60}ms`,

@@ -203,8 +203,8 @@ func TestCatalogEndpointNeedsItsOwnPermission(t *testing.T) {
 	}
 
 	systems := testutil.Decode(t, rec)["data"].([]any)
-	if len(systems) != 8 {
-		t.Fatalf("esperaba 8 sistemas, llegaron %d", len(systems))
+	if len(systems) != 10 {
+		t.Fatalf("esperaba 10 sistemas, llegaron %d", len(systems))
 	}
 }
 

@@ -16,7 +16,10 @@ const modulePath = "minimarket/backend/internal/"
 // caso de uso. (Las pruebas no cuentan.)
 const maxFileLines = 300
 
-var systems = map[string]bool{"erp": true, "pos": true, "scm": true, "wms": true, "hcm": true, "crm": true, "bi": true, "config": true}
+var systems = map[string]bool{
+	"erp": true, "pos": true, "mdm": true, "scm": true, "wms": true, "tms": true,
+	"hcm": true, "crm": true, "bi": true, "config": true,
+}
 
 // Un submódulo puede usar a otro solo si queda escrito aquí, con su motivo:
 // "origen" → ["destino", …]. Así cada dependencia entre submódulos es una

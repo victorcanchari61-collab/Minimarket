@@ -20,6 +20,8 @@ import {
     ClipboardList,
     Clock,
     Coins,
+    ContactRound,
+    Container,
     CreditCard,
     Database,
     DoorOpen,
@@ -31,8 +33,11 @@ import {
     Filter,
     Fingerprint,
     FolderOpen,
+    Fuel,
     Gauge,
+    GitMerge,
     Gift,
+    Globe,
     GraduationCap,
     Handshake,
     HandCoins,
@@ -40,6 +45,7 @@ import {
     HardHat,
     Headset,
     History,
+    IdCard,
     KeyRound,
     Landmark,
     Layers,
@@ -50,11 +56,13 @@ import {
     ListOrdered,
     Map,
     MapPin,
+    MapPinned,
     Medal,
     Megaphone,
     MessageCircle,
     MessageSquareWarning,
     Monitor,
+    Navigation,
     Network,
     Package,
     PackageCheck,
@@ -65,6 +73,7 @@ import {
     Receipt,
     RefreshCw,
     Rocket,
+    Radar,
     Route,
     Ruler,
     Scale,
@@ -84,6 +93,7 @@ import {
     Star,
     Stethoscope,
     Store,
+    Tag,
     Target,
     Thermometer,
     Ticket,
@@ -241,6 +251,36 @@ export const SYSTEM_NAV: Record<PortalKey, NavModule[]> = {
         ]),
     ],
 
+    mdm: [
+        mod('products', 'Productos', Tag, [
+            item('products', 'Productos', Package),
+            item('brands', 'Marcas', Award),
+            item('categories', 'Categorías y subcategorías', Layers),
+            item('barcodes', 'Códigos de barras', Barcode),
+            item('taxes', 'Impuestos', Percent),
+            item('units', 'Unidades y equivalencias', Ruler),
+        ]),
+        mod('locations', 'Zonas y formatos', MapPinned, [
+            item('regions', 'Regiones y zonas', Globe),
+            item('formats', 'Formatos de tienda', Store),
+            item('hours', 'Horarios de atención', Clock),
+        ]),
+        mod('suppliers', 'Proveedores', Handshake, [
+            item('suppliers', 'Maestro de proveedores', Building2),
+            item('contracts', 'Contactos y contratos', FileText),
+            item('terms', 'Condiciones y plazos', CalendarClock),
+        ]),
+        mod('customers', 'Clientes', Users, [
+            item('records', 'Datos del cliente', ContactRound),
+            item('consents', 'Consentimientos', ShieldCheck),
+        ]),
+        mod('quality', 'Calidad de datos', ListChecks, [
+            item('duplicates', 'Duplicados y fusiones', GitMerge),
+            item('approvals', 'Aprobación de altas', ClipboardCheck),
+            item('changes', 'Historial de cambios', History),
+        ]),
+    ],
+
     scm: [
         mod('demand', 'Planeación de la demanda', TrendingUp, [
             item('forecast', 'Pronóstico por SKU', ChartLine),
@@ -302,6 +342,34 @@ export const SYSTEM_NAV: Record<PortalKey, NavModule[]> = {
         mod('reverse_logistics', 'Devoluciones (logística inversa)', Undo2, [
             item('store_returns', 'Retorno desde tiendas', Store),
             item('classification', 'Clasificación', ListFilter),
+        ]),
+    ],
+
+    tms: [
+        mod('fleet', 'Flota', Truck, [
+            item('vehicles', 'Vehículos', Container),
+            item('drivers', 'Conductores', IdCard),
+            item('carriers', 'Transportistas', Building2),
+            item('maintenance', 'Mantenimiento', Wrench),
+        ]),
+        mod('routes', 'Rutas y planificación', Route, [
+            item('route_plans', 'Rutas', Map),
+            item('optimization', 'Optimización de rutas', Navigation),
+            item('calendar', 'Calendario de entregas', CalendarDays),
+        ]),
+        mod('dispatch', 'Despachos', PackageCheck, [
+            item('assignment', 'Asignación de pedidos', ClipboardList),
+            item('departures', 'Salidas y retornos', ArrowLeftRight),
+        ]),
+        mod('tracking', 'Seguimiento', Radar, [
+            item('live', 'Seguimiento en vivo', MapPin),
+            item('deliveries', 'Entregas y prueba de entrega', FileCheck),
+            item('incidents', 'Incidencias', TriangleAlert),
+        ]),
+        mod('costs', 'Costos de transporte', Coins, [
+            item('fuel', 'Combustible', Fuel),
+            item('trip_costs', 'Costos por ruta y entrega', Receipt),
+            item('freight', 'Fletes de transportistas', HandCoins),
         ]),
     ],
 
