@@ -253,7 +253,13 @@ export default function SystemSidebar({
                 })}
             </ul>
 
-            <div className="hidden flex-col gap-0.5 border-t border-[color-mix(in_oklab,var(--grad-start)_10%,#e5e7eb)] p-2 lg:flex">
+            <div
+                className={cn(
+                    'hidden gap-0.5 border-t border-[color-mix(in_oklab,var(--grad-start)_10%,#e5e7eb)] p-2 lg:flex',
+                    // Abierto: los dos botones comparten una fila; contraído no cabe, van uno sobre otro.
+                    collapsed ? 'flex-col' : 'flex-row',
+                )}
+            >
                 <button
                     type="button"
                     onClick={onToggleCollapsed}
@@ -262,7 +268,10 @@ export default function SystemSidebar({
                     }
                     aria-expanded={!collapsed}
                     title={collapsed ? 'Expandir el menú' : undefined}
-                    className={cn(FOOTER_BUTTON, collapsed && 'justify-center')}
+                    className={cn(
+                        FOOTER_BUTTON,
+                        collapsed ? 'justify-center' : 'min-w-0 flex-1',
+                    )}
                 >
                     <span className="grid size-7 shrink-0 place-items-center">
                         {collapsed ? (
@@ -277,7 +286,7 @@ export default function SystemSidebar({
                             />
                         )}
                     </span>
-                    {!collapsed && 'Contraer menú'}
+                    {!collapsed && 'Contraer'}
                 </button>
 
                 {onHide && (
@@ -288,7 +297,7 @@ export default function SystemSidebar({
                         title={collapsed ? 'Ocultar el menú' : undefined}
                         className={cn(
                             FOOTER_BUTTON,
-                            collapsed && 'justify-center',
+                            collapsed ? 'justify-center' : 'min-w-0 flex-1',
                         )}
                     >
                         <span className="grid size-7 shrink-0 place-items-center">
@@ -297,7 +306,7 @@ export default function SystemSidebar({
                                 aria-hidden
                             />
                         </span>
-                        {!collapsed && 'Ocultar menú'}
+                        {!collapsed && 'Ocultar'}
                     </button>
                 )}
             </div>

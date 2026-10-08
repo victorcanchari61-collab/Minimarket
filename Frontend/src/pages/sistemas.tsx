@@ -35,7 +35,7 @@ export default function Sistemas() {
                     )}
                 </header>
 
-                <main className="mx-auto flex max-w-[1180px] flex-col items-center px-6 pt-10 pb-16 sm:pt-16">
+                <main className="mx-auto flex max-w-[1500px] flex-col items-center px-6 pt-10 pb-16 sm:pt-16">
                     <div className="grid size-16 place-items-center rounded-[18px] bg-[#1a1033] text-white shadow-[0_14px_28px_-12px_rgb(26_16_51/0.55)]">
                         <ShoppingBasket className="size-7" aria-hidden />
                     </div>
