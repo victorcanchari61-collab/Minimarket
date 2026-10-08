@@ -308,7 +308,10 @@ Además: `go vet ./...` y `gofmt` limpios.
 | Configuraciones › Empresa y sucursales › Datos de la empresa (razón social, RUC con dígito verificador, dirección fiscal; una empresa hoy, esquema listo para varias) | Hecho |
 | Configuraciones › Empresa y sucursales › Sucursales: listado de 20 con cursor, alta, edición (tipo tienda o centro de distribución, establecimiento SUNAT, activar o desactivar) y baja solo si no tiene almacenes ni usuarios | Hecho |
 | Configuraciones › Empresa y sucursales › Almacenes: varios por sucursal, código único dentro de la sucursal | Hecho |
-| Terminales y series, Auditoría, Integraciones (SUNAT, Bancos, APIs y webhooks) | Pendiente |
+| Configuraciones › Terminales y series › Terminales POS: solo en tiendas, código único por sucursal, almacén de la misma sucursal, no se elimina con series asignadas | Hecho |
+| Configuraciones › Terminales y series › Series de comprobantes: formato y letra por tipo (SUNAT), única por tipo, correlativo que solo mueve el sistema, serie usada no cambia ni se elimina | Hecho |
+| Auditoría: `internal/audit` anota cambios exitosos, ingresos, intentos fallidos y cierres de sesión sin guardar contenidos; Configuraciones › Auditoría › Historial de acciones lo lee (20 con cursor, rango de fechas, filtros) | Hecho (falta exportar, como trabajo en segundo plano) |
+| Integraciones (SUNAT, Bancos, APIs y webhooks) | Pendiente |
 | ERP › Inventario con kardex | Pendiente |
 | Eventos entre sistemas y trabajos en segundo plano (SUNAT, CRM, BI) | Pendiente |
 | Tipo decimal para cálculos de dinero y cantidades | Pendiente (se decide al primer cálculo) |

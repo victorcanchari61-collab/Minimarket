@@ -42,6 +42,11 @@ Requiere Go 1.27 y PostgreSQL (base `minimarket`). En Windows, `iniciar-api.bat`
 | GET · PUT · DELETE | `/api/branches/:id` · `/api/branches/summary` | ver, editar y eliminar (solo si no tiene almacenes ni usuarios) · cifras de la cabecera |
 | GET · POST | `/api/warehouses` | almacenes: 20 por petición con cursor (`search`, `branch_id`, `status`, `sort`) · alta |
 | GET · PUT · DELETE | `/api/warehouses/:id` · `/summary` · `/branches` | ver, editar y eliminar · cifras de la cabecera · sucursales donde poner un almacén |
+| GET · POST | `/api/terminals` | terminales POS: 20 por petición con cursor (`search`, `branch_id`, `status`, `sort`) · alta |
+| GET · PUT · DELETE | `/api/terminals/:id` · `/summary` · `/branches` · `/warehouses` | ver, editar y eliminar (solo sin series asignadas) · cifras · tiendas y almacenes para el formulario |
+| GET · POST | `/api/document-series` | series de comprobantes: 20 con cursor (`search`, `branch_id`, `terminal_id`, `document_type`, `status`, `sort`) · alta |
+| GET · PUT · DELETE | `/api/document-series/:id` · `/summary` · `/branches` · `/terminals` | ver, editar y eliminar (solo si no emitió) · cifras · sucursales y terminales para el formulario |
+| GET | `/api/audit/history` · `/users` | historial de acciones: 20 con cursor, de lo más reciente a lo más antiguo (`from`, `to`, `user_id`, `entity`, `action`, `search`; sin fechas, el último mes) · personas del filtro |
 | GET | `/api/company/branches` | sucursales activas (cualquier usuario con sesión; alimenta el selector de sucursal) |
 | GET | `/api/permissions/me` | acciones que puede hacer el usuario (arma el menú) |
 | GET | `/api/permissions/catalog` | árbol completo de permisos (sistema → módulo → submódulo → acciones) |
@@ -67,6 +72,10 @@ internal/
   config/company/info/           Configuraciones › Empresa y sucursales › Datos de la empresa
   config/company/warehouses/     Configuraciones › Empresa y sucursales › Almacenes
   config/company/branches/        Configuraciones › Empresa y sucursales › Sucursales
+  config/terminals/terminals/    Configuraciones › Terminales y series › Terminales POS
+  config/terminals/series/       Configuraciones › Terminales y series › Series de comprobantes
+  config/audit/history/          Configuraciones › Auditoría › Historial de acciones (lectura)
+  audit/                         registro del historial: middleware que anota cambios, ingresos y fallos
   erp/catalog/units/             otro submódulo (Unidades y presentaciones)
   server/                        enrutador (compone los submódulos)
   testutil/                      pruebas con PostgreSQL real

@@ -11,12 +11,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"minimarket/backend/internal/audit"
 	"minimarket/backend/internal/auth"
+	history "minimarket/backend/internal/config/audit/history"
 	"minimarket/backend/internal/config/company/branches"
 	"minimarket/backend/internal/config/company/info"
 	"minimarket/backend/internal/config/company/warehouses"
 	access "minimarket/backend/internal/config/roles/permissions"
 	"minimarket/backend/internal/config/roles/roles"
+	"minimarket/backend/internal/config/terminals/series"
+	"minimarket/backend/internal/config/terminals/terminals"
 	users "minimarket/backend/internal/config/users/list"
 	"minimarket/backend/internal/erp/catalog/products"
 	"minimarket/backend/internal/erp/catalog/units"
@@ -70,10 +74,16 @@ func New(cfg config.Config, pool *pgxpool.Pool) *gin.Engine {
 	can := permission.Guard(permissions)
 	authHandler := auth.NewHandler(authService, cfg.IsLocal(), permissions.AssignAdmin)
 
-	api.POST("/login", web.RateLimit(5, time.Minute), authHandler.Login)
+	recorder := audit.NewService(audit.NewStore(pool))
+
+	api.POST("/login", web.RateLimit(5, time.Minute), audit.Login(recorder), authHandler.Login)
 	api.GET("/demo-credentials", authHandler.DemoCredentials)
 
-	protected := api.Group("", auth.Required(authService))
+	protected := api.Group("", auth.Required(authService), audit.Record(recorder, func(c *gin.Context) audit.Actor {
+		user := auth.CurrentUser(c)
+
+		return audit.Actor{ID: user.ID, Name: user.Name, Email: user.Email}
+	}))
 	protected.GET("/user", authHandler.Me)
 	protected.POST("/logout", authHandler.Logout)
 
@@ -83,7 +93,10 @@ func New(cfg config.Config, pool *pgxpool.Pool) *gin.Engine {
 	branches.New(pool).Routes(protected, can)
 	info.New(pool).Routes(protected, can)
 	warehouses.New(pool).Routes(protected, can)
+	terminals.New(pool).Routes(protected, can)
+	series.New(pool).Routes(protected, can)
 	users.New(pool).Routes(protected, can)
+	history.New(pool).Routes(protected, can)
 	roles.New(pool, permissions.Valid).Routes(protected, can)
 	access.New(pool, access.Rules{
 		Valid:    permissions.Valid,

@@ -92,9 +92,10 @@ func isFeature(dir string) bool {
 
 // permission (el control de acceso) no es un submódulo ni una pieza común: usa
 // a auth para saber quién es el usuario y los submódulos solo reciben de él un
-// web.Guard, sin importarlo. Sigue las mismas reglas de HTTP que una funcionalidad.
+// web.Guard, sin importarlo. audit (el registro del historial) tampoco es un
+// submódulo: lo usa todo el servidor. Ambos siguen las mismas reglas de HTTP.
 func followsHTTPRules(dir string) bool {
-	return isFeature(dir) || dir == "permission"
+	return isFeature(dir) || dir == "permission" || dir == "audit"
 }
 
 // La capa HTTP de un paquete puede repartirse en varios archivos por caso de

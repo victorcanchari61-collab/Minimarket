@@ -423,12 +423,13 @@ El sistema transversal: define **quién entra, a qué, y con qué empresa, sucur
 - Cada usuario trabaja en las sucursales que se le asignan (una, varias o todas; los administradores, todas). La sucursal activa se elige en el menú de la cuenta
 - Jerarquía: empresa → sucursal → almacenes, cajas y personal
 
-### 5.4 Terminales y series — [Pendiente]
-- **Terminales POS**: cajas de cada sucursal
-- **Series de comprobantes**: numeración por sucursal y tipo de comprobante
+### 5.4 Terminales y series — [Hecho]
+- **Terminales POS**: las cajas de cada tienda (un centro de distribución no lleva cajas), con código único dentro de la sucursal y, opcionalmente, el almacén de su sucursal del que descuenta lo que vende. No se elimina una terminal con series asignadas: se desactiva
+- **Series de comprobantes**: cuatro caracteres con la letra que pide SUNAT (F facturas, B boletas, F o B notas de crédito y débito, T o V guías de remisión), únicas por tipo en toda la empresa y asignadas a una sucursal y, si se quiere, a una terminal de esa sucursal. El correlativo arranca en 1 (o en el número desde el que continúa una numeración anterior) y solo lo mueve el sistema al emitir. Una serie que ya emitió no cambia de tipo, código ni sucursal y no se elimina: se desactiva
 
-### 5.5 Auditoría — [Pendiente]
-- **Historial de acciones**: quién, cuándo y qué cambió, con filtros y exportación
+### 5.5 Auditoría — [Hecho, falta exportar]
+- **Historial de acciones**: se anota cada cambio que sale bien (crear, editar, eliminar, aprobar, rechazar, restablecer contraseña), los ingresos, los intentos fallidos y el cierre de sesión: quién, cuándo, sobre qué registro y desde qué IP. **Nunca se guarda el contenido enviado ni las contraseñas.** Se consulta de lo más reciente a lo más antiguo, por defecto el último mes (hasta un año por consulta), con filtros por fecha, persona, acción y tipo de registro
+- Exportar el historial queda pendiente: será un trabajo en segundo plano (regla 12)
 
 ### 5.6 Integraciones — [Pendiente] (se construye al final)
 - **SUNAT**: emisión y consulta de comprobantes
@@ -594,8 +595,8 @@ Proveedor ──► WMS (recepción) ──► ERP (inventario, compra, cuenta p
 
 | Área | Qué está hecho | Qué falta |
 |---|---|---|
-| Acceso y seguridad | Inicio de sesión, permisos jerárquicos, roles, permisos directos y denegaciones, solicitudes de acceso, sucursales por usuario | Auditoría; validar la sucursal activa en el servidor |
-| Configuraciones | Usuarios, Roles y permisos, Empresa y sucursales (datos, sucursales, almacenes) | Terminales y series, Auditoría, Integraciones |
+| Acceso y seguridad | Inicio de sesión, permisos jerárquicos, roles, permisos directos y denegaciones, solicitudes de acceso, sucursales por usuario, historial de acciones | Validar la sucursal activa en el servidor |
+| Configuraciones | Usuarios, Roles y permisos, Empresa y sucursales, Terminales y series, Auditoría (historial) | Integraciones (SUNAT, Bancos, APIs y webhooks), exportar el historial |
 | ERP | Catálogo › Productos; lista de unidades | Resto del catálogo, Inventario, Compras, Ventas y distribución, Finanzas, Activos fijos, Presupuesto |
 | POS, MDM, SCM, WMS, TMS, HCM, CRM, BI | Diseño del menú y de los permisos de cada submódulo | Todo lo demás |
 

@@ -1,9 +1,12 @@
 import type { ComponentType } from 'react';
+import HistoryScreen from '@/features/config/audit/history-screen';
 import BranchesScreen from '@/features/config/company/branches-screen';
 import CompanyScreen from '@/features/config/company/company-screen';
 import WarehousesScreen from '@/features/config/company/warehouses-screen';
 import PermissionsScreen from '@/features/config/permissions/permissions-screen';
 import RolesScreen from '@/features/config/roles/roles-screen';
+import SeriesScreen from '@/features/config/terminals/series-screen';
+import TerminalsScreen from '@/features/config/terminals/terminals-screen';
 import UsersScreen from '@/features/config/users/users-screen';
 import ProductsScreen from '@/features/erp/catalog/products-screen';
 
@@ -19,4 +22,7 @@ export const SCREENS: Record<string, ComponentType> = {
     'config/empresa-y-sucursales/datos-de-la-empresa': CompanyScreen,
     'config/empresa-y-sucursales/sucursales': BranchesScreen,
     'config/empresa-y-sucursales/almacenes': WarehousesScreen,
+    'config/terminales-y-series/terminales-pos': TerminalsScreen,
+    'config/terminales-y-series/series-de-comprobantes': SeriesScreen,
+    'config/auditoria/historial-de-acciones': HistoryScreen,
 };
